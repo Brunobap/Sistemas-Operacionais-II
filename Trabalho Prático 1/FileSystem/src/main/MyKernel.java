@@ -1,12 +1,12 @@
 package main;
 
+import fileItens.Arquivo;
 import fileItens.Diretorio;
 /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
 import operatingSystem.Kernel;
-
 /**
  * Kernel desenvolvido pelo aluno. Outras classes criadas pelo aluno podem ser
  * utilizadas, como por exemplo: - Arvores; - Filas; - Pilhas; - etc...
@@ -32,15 +32,57 @@ public class MyKernel implements Kernel {
 
         //inicio da implementacao do aluno
         if (parameters.equals("")) {
-        	int i = 1;
-        	for (Diretorio d : this.atual.getMapDir().values()) {
+        	for (Diretorio d : this.atual.getMapDir().values())
         		result += d.getNome()+" ";
-        		if (i%3 == 0) result += "\n";
-        		i++;
-        	}
         } else if (parameters.equals("-l")) {
         	for (Diretorio d : this.atual.getMapDir().values())
-        		result += d.getPermissao()+" ";
+        		result += 
+        			d.getPermissao()+" "+
+        			util.Utilitarios.checkMonth(d.getCriacao().getMonth()+1)+" "+
+        			(d.getCriacao().getDate()+" ")+
+        			(d.getCriacao().getHours()+":"+d.getCriacao().getMinutes())+" "+
+        			d.getNome()+"\n";
+        	for (Arquivo a : this.atual.getMapFiles().values())
+        		result += 
+        			a.getPermissao()+" "+
+        			util.Utilitarios.checkMonth(a.getCriacao().getMonth()+1)+" "+
+        			(a.getCriacao().getDate()+" ")+
+        			(a.getCriacao().getHours()+":"+a.getCriacao().getMinutes())+" "+
+        			a.getNome()+"\n";
+        	
+        } else if (parameters.startsWith("-l ")) {
+        	Diretorio aux;
+        	int i = 1;
+        	String paramRedux = parameters.substring(3,parameters.length());
+            if (paramRedux.startsWith("../")) {
+            	aux = this.atual.getPai();
+            } else if (paramRedux.startsWith("./")) {
+            	aux = this.atual;
+            } else {
+    			if (!paramRedux.startsWith("/")) i = 0;
+    			aux = this.raiz;
+    		}
+            
+            String[] caminho = paramRedux.split("/");
+    		for (; i<caminho.length; i++) {
+    			if (aux.getMapDir().containsKey(caminho[i])) {
+    				aux = aux.getMapDir().get(caminho[i]);
+    			} else return "ls: Diretório não existe.";
+    		}
+    		for (Diretorio d : aux.getMapDir().values())
+        		result += 
+        			d.getPermissao()+" "+
+        			util.Utilitarios.checkMonth(d.getCriacao().getMonth()+1)+" "+
+        			(d.getCriacao().getDate()+" ")+
+        			(d.getCriacao().getHours()+":"+d.getCriacao().getMinutes())+" "+
+        			d.getNome()+"\n";
+        	for (Arquivo a : aux.getMapFiles().values())
+        		result += 
+    				a.getPermissao()+" "+
+    				util.Utilitarios.checkMonth(a.getCriacao().getMonth()+1)+" "+
+    				(a.getCriacao().getDate()+" ")+
+    				(a.getCriacao().getHours()+":"+a.getCriacao().getMinutes())+" "+
+    				a.getNome()+"\n";
         }
         //fim da implementacao do aluno
         return result;

@@ -1,5 +1,5 @@
 package fileItens;
 
-public class Arquivo {
+public class Arquivo extends Item {
 
 }
