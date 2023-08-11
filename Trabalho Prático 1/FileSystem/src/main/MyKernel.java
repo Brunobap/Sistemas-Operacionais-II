@@ -19,11 +19,12 @@ public class MyKernel implements Kernel {
 	private Diretorio raiz;
 
     public MyKernel() {
-    	this.raiz = new Diretorio();
+    	this.raiz = new Diretorio(null, "/");
     	this.raiz.setPai(raiz);
     	this.atual = this.raiz;
     }
 
+    // *** C O M P L E T A ***
     public String ls(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -34,26 +35,31 @@ public class MyKernel implements Kernel {
         if (parameters.equals("")) {
         	for (Diretorio d : this.atual.getMapDir().values())
         		result += d.getNome()+" ";
+        	for (Arquivo a : this.atual.getMapFiles().values())
+        		result += a.getNome()+" ";
         } else if (parameters.equals("-l")) {
         	for (Diretorio d : this.atual.getMapDir().values())
         		result += 
         			d.getPermissao()+" "+
-        			util.Utilitarios.checkMonth(d.getCriacao().getMonth()+1)+" "+
+        			checkMonth(d.getCriacao().getMonth()+1)+" "+
         			(d.getCriacao().getDate()+" ")+
         			(d.getCriacao().getHours()+":"+d.getCriacao().getMinutes())+" "+
         			d.getNome()+"\n";
         	for (Arquivo a : this.atual.getMapFiles().values())
         		result += 
         			a.getPermissao()+" "+
-        			util.Utilitarios.checkMonth(a.getCriacao().getMonth()+1)+" "+
+        			checkMonth(a.getCriacao().getMonth()+1)+" "+
         			(a.getCriacao().getDate()+" ")+
         			(a.getCriacao().getHours()+":"+a.getCriacao().getMinutes())+" "+
         			a.getNome()+"\n";
         	
-        } else if (parameters.startsWith("-l ")) {
+        } else {
         	Diretorio aux;
         	int i = 1;
-        	String paramRedux = parameters.substring(3,parameters.length());
+        	
+        	String paramRedux = parameters;
+        	if (parameters.startsWith("-l ")) paramRedux = parameters.substring(3,parameters.length());
+        	
             if (paramRedux.startsWith("../")) {
             	aux = this.atual.getPai();
             } else if (paramRedux.startsWith("./")) {
@@ -67,27 +73,38 @@ public class MyKernel implements Kernel {
     		for (; i<caminho.length; i++) {
     			if (aux.getMapDir().containsKey(caminho[i])) {
     				aux = aux.getMapDir().get(caminho[i]);
-    			} else return "ls: Diretório não existe.";
+    			} else if (caminho[i].equals("..")) {					
+					aux = aux.getPai();
+				} else if (!caminho[i].equals(".")) return "ls: Diretório não existe.";
     		}
-    		for (Diretorio d : aux.getMapDir().values())
-        		result += 
-        			d.getPermissao()+" "+
-        			util.Utilitarios.checkMonth(d.getCriacao().getMonth()+1)+" "+
-        			(d.getCriacao().getDate()+" ")+
-        			(d.getCriacao().getHours()+":"+d.getCriacao().getMinutes())+" "+
-        			d.getNome()+"\n";
-        	for (Arquivo a : aux.getMapFiles().values())
-        		result += 
-    				a.getPermissao()+" "+
-    				util.Utilitarios.checkMonth(a.getCriacao().getMonth()+1)+" "+
-    				(a.getCriacao().getDate()+" ")+
-    				(a.getCriacao().getHours()+":"+a.getCriacao().getMinutes())+" "+
-    				a.getNome()+"\n";
+    		
+    		if (parameters.startsWith("-l ")) {
+	    		for (Diretorio d : aux.getMapDir().values())
+	        		result += 
+	        			d.getPermissao()+" "+
+	        			checkMonth(d.getCriacao().getMonth()+1)+" "+
+	        			(d.getCriacao().getDate()+" ")+
+	        			(d.getCriacao().getHours()+":"+d.getCriacao().getMinutes())+" "+
+	        			d.getNome()+"\n";
+	        	for (Arquivo a : aux.getMapFiles().values())
+	        		result += 
+	    				a.getPermissao()+" "+
+	    				checkMonth(a.getCriacao().getMonth()+1)+" "+
+	    				(a.getCriacao().getDate()+" ")+
+	    				(a.getCriacao().getHours()+":"+a.getCriacao().getMinutes())+" "+
+	    				a.getNome()+"\n";
+    		} else {
+    			for (Diretorio d : aux.getMapDir().values())
+	        		result += d.getNome()+" ";
+	        	for (Arquivo a : aux.getMapFiles().values())
+	        		result += a.getNome()+" ";
+    		}
         }
         //fim da implementacao do aluno
         return result;
     }
 
+    // *** C O M P L E T A ***
     public String mkdir(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -111,8 +128,9 @@ public class MyKernel implements Kernel {
     			if (aux.getMapDir().containsKey(caminho[i])) {
     				aux = aux.getMapDir().get(caminho[i]);
     				result = "mkdir: "+parameters+": Diretorio ja existe (Nenhum diretorio foi criado)";
-    			}
-    			else {
+    			} else if (caminho[i].equals("..")) {					
+					aux = aux.getPai();
+				} else if (!caminho[i].equals(".")) {
     				Diretorio novo = new Diretorio(aux, caminho[i]);
     				aux.getMapDir().put(caminho[i], novo);
     				aux = novo;
@@ -126,6 +144,7 @@ public class MyKernel implements Kernel {
     	return result;
     }
 
+    // *** C O M P L E T A ***
     public String cd(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -154,7 +173,8 @@ public class MyKernel implements Kernel {
 		for (; i<caminho.length; i++) {
 			if (aux.getMapDir().containsKey(caminho[i])) {
 				aux = aux.getMapDir().get(caminho[i]);
-				currentDir += caminho[i]+"/";
+				if (!currentDir.equals("/")) currentDir += "/";
+				currentDir += caminho[i];
 			} else {
 				if (caminho[i].equals("..")) {					
 					if (aux != this.raiz) {
@@ -235,6 +255,41 @@ public class MyKernel implements Kernel {
         System.out.println("\tParametros: " + parameters);
 
         //inicio da implementacao do aluno
+        Diretorio aux;
+		int i = 1;
+		if (parameters.startsWith("../")) aux = this.atual.getPai();
+		else if (parameters.startsWith("./")) aux = this.atual;
+		else {
+			if (!parameters.startsWith("/")) i = 0;
+			aux = this.raiz;
+		}
+		
+		String[] caminho = parameters.split("/");
+		for (; i<(caminho.length-1); i++) {
+			if (aux.getMapDir().containsKey(caminho[i])) {
+				aux = aux.getMapDir().get(caminho[i]);
+			}
+			else {
+				Diretorio novo = new Diretorio(aux, caminho[i]);
+				aux.getMapDir().put(caminho[i], novo);
+				aux = novo;
+			}
+		}
+			
+		/*
+		 * 
+		 * public static String removeCarriageReturn(String query) {
+        //        query.replaceAll(regex, replacement)
+        String result = query.replaceAll("[\r\n]", " ");
+        return result;
+    }
+		 */
+		String infoFile[] = caminho[caminho.length-1].split(" ", 2);
+		String conteudo = infoFile[1].replaceAll("(\\n)", "\r\n");
+		Arquivo novo = new Arquivo(aux, infoFile[0], conteudo);
+		
+		aux.getMapFiles().put(infoFile[0], novo);
+        
         //fim da implementacao do aluno
         return result;
     }
@@ -246,6 +301,26 @@ public class MyKernel implements Kernel {
         System.out.println("\tParametros: " + parameters);
 
         //inicio da implementacao do aluno
+        Diretorio aux;
+		int i = 1;
+		if (parameters.startsWith("../")) aux = this.atual.getPai();
+		else if (parameters.startsWith("./")) aux = this.atual;
+		else {
+			if (!parameters.startsWith("/")) i = 0;
+			aux = this.raiz;
+		}
+		
+		String[] caminho = parameters.split("/");
+		for (; i<(caminho.length-1); i++) {
+			if (aux.getMapDir().containsKey(caminho[i])) {
+				aux = aux.getMapDir().get(caminho[i]);
+			}
+			else return "cat: Arquivo não existe.";
+		}
+			
+		String infoFile[] = caminho[caminho.length-1].split(" ", 2);
+		if (aux.getMapFiles().containsKey(infoFile[0])) result = aux.getMapFiles().get(infoFile[0]).getConteudo();
+		else result = "cat: Arquivo não existe.";
         //fim da implementacao do aluno
         return result;
     }
@@ -272,6 +347,7 @@ public class MyKernel implements Kernel {
         return result;
     }
 
+    // COMPLETA
     public String info() {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -292,4 +368,21 @@ public class MyKernel implements Kernel {
         return result;
     }
 
+    
+    // FUNÇÕES UTITLITARIAS
+    public static String checkMonth(int month) {
+		if (month == 1) return "Jan";
+		else if (month == 2) return "Feb";
+		else if (month == 3) return "Mar";
+		else if (month == 4) return "Apr";
+		else if (month == 5) return "May";
+		else if (month == 6) return "Jun";
+		else if (month == 7) return "Jul";
+		else if (month == 8) return "Aug";
+		else if (month == 9) return "Sep";
+		else if (month == 10) return "Oct";
+		else if (month == 11) return "Nov";
+		else if (month == 12) return "Dec";
+		else return "-";
+	}
 }
