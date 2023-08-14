@@ -24,7 +24,9 @@ public class MyKernel implements Kernel {
     	this.atual = this.raiz;
     }
 
-    // *** C O M P L E T A ***
+    // TODO: 8 de 11 funções completas
+    
+    // *** C O M P L E T A S ***
     public String ls(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -103,8 +105,6 @@ public class MyKernel implements Kernel {
         //fim da implementacao do aluno
         return result;
     }
-
-    // *** C O M P L E T A ***
     public String mkdir(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -143,8 +143,6 @@ public class MyKernel implements Kernel {
         
     	return result;
     }
-
-    // *** C O M P L E T A ***
     public String cd(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -192,62 +190,6 @@ public class MyKernel implements Kernel {
         //fim da implementacao do aluno
         return result;
     }
-
-    public String rmdir(String parameters) {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: rmdir");
-        System.out.println("\tParametros: " + parameters);
-
-        //inicio da implementacao do aluno
-        //fim da implementacao do aluno
-        return result;
-    }
-
-    public String cp(String parameters) {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: cp");
-        System.out.println("\tParametros: " + parameters);
-
-        //inicio da implementacao do aluno
-        //fim da implementacao do aluno
-        return result;
-    }
-
-    public String mv(String parameters) {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: mv");
-        System.out.println("\tParametros: " + parameters);
-
-        //inicio da implementacao do aluno
-        //fim da implementacao do aluno
-        return result;
-    }
-
-    public String rm(String parameters) {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: rm");
-        System.out.println("\tParametros: " + parameters);
-
-        //inicio da implementacao do aluno
-        //fim da implementacao do aluno
-        return result;
-    }
-
-    public String chmod(String parameters) {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: chmod");
-        System.out.println("\tParametros: " + parameters);
-
-        //inicio da implementacao do aluno
-        //fim da implementacao do aluno
-        return result;
-    }
-
     public String createfile(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -270,30 +212,24 @@ public class MyKernel implements Kernel {
 				aux = aux.getMapDir().get(caminho[i]);
 			}
 			else {
-				Diretorio novo = new Diretorio(aux, caminho[i]);
-				aux.getMapDir().put(caminho[i], novo);
-				aux = novo;
+				result = "createfile: Diretório não existe. Não foi possível criar arquivo.";
+				return result;
 			}
 		}
-			
-		/*
-		 * 
-		 * public static String removeCarriageReturn(String query) {
-        //        query.replaceAll(regex, replacement)
-        String result = query.replaceAll("[\r\n]", " ");
-        return result;
-    }
-		 */
-		String infoFile[] = caminho[caminho.length-1].split(" ", 2);
-		String conteudo = infoFile[1].replaceAll("(\\n)", "\r\n");
-		Arquivo novo = new Arquivo(aux, infoFile[0], conteudo);
 		
-		aux.getMapFiles().put(infoFile[0], novo);
+		if (aux.getMapFiles().containsKey(caminho[i])) 
+			result = "createfile: Arquivo já existe. Não foi posível criá-lo.";
+		else {
+			String infoFile[] = caminho[i].split(" ", 2);
+			String conteudo = infoFile[1].replaceAll("\\\\n", "\n");
+			Arquivo novo = new Arquivo(aux, infoFile[0], conteudo);
+			
+			aux.getMapFiles().put(infoFile[0], novo);
+		}
         
         //fim da implementacao do aluno
         return result;
     }
-
     public String cat(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -314,13 +250,151 @@ public class MyKernel implements Kernel {
 		for (; i<(caminho.length-1); i++) {
 			if (aux.getMapDir().containsKey(caminho[i])) {
 				aux = aux.getMapDir().get(caminho[i]);
-			}
-			else return "cat: Arquivo não existe.";
+			} else if (caminho[i].equals("..")) { 
+				aux = aux.getPai();
+			} else if (!caminho[i].equals(".")) return "cat: Arquivo não existe.";
 		}
 			
-		String infoFile[] = caminho[caminho.length-1].split(" ", 2);
+		String infoFile[] = caminho[i].split(" ", 2);
 		if (aux.getMapFiles().containsKey(infoFile[0])) result = aux.getMapFiles().get(infoFile[0]).getConteudo();
 		else result = "cat: Arquivo não existe.";
+        //fim da implementacao do aluno
+        return result;
+    }
+    public String info() {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: info");
+        System.out.println("\tParametros: sem parametros");
+
+        //nome do aluno
+        String name = "Bruno Ribeiro Batista";
+        //numero de matricula
+        String registration = "202111020022";
+        //versao do sistema de arquivos
+        String version = "0.1";
+
+        result += "Nome do Aluno:        " + name;
+        result += "\nMatricula do Aluno:   " + registration;
+        result += "\nVersao do Kernel:     " + version;
+
+        return result;
+    }
+    public String rmdir(String parameters) {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: rmdir");
+        System.out.println("\tParametros: " + parameters);
+
+        //inicio da implementacao do aluno
+        Diretorio aux;
+		int i = 1;
+		if (parameters.startsWith("../")) aux = this.atual.getPai();
+		else if (parameters.startsWith("./")) aux = this.atual;
+		else {
+			if (!parameters.startsWith("/")) i = 0;
+			aux = this.raiz;
+		}
+		
+		String[] caminho = parameters.split("/");
+		for (; i<(caminho.length-1); i++) {
+			if (aux.getMapDir().containsKey(caminho[i])) {
+				aux = aux.getMapDir().get(caminho[i]);
+			}
+			else {
+				result = "rmdir: Diretório "+parameters+"não existe. (Nada foi removido)";
+				return result;
+			}
+		}
+		
+		if (aux.getMapDir().containsKey(caminho[i])) {
+			Diretorio target = aux.getMapDir().get(caminho[i]);
+			if (target.getMapDir().isEmpty() && target.getMapFiles().isEmpty()) 
+				aux.getMapDir().remove(target.getNome());
+			else result = "rmdir: Diretório "+parameters+" possui arquivos e/ou diretórios. (Nada foi removido)";
+		} else result = "rmdir: Diretório "+parameters+"não existe. (Nada foi removido)";
+		
+        //fim da implementacao do aluno
+        return result;
+    }
+    public String rm(String parameters) {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: rm");
+        System.out.println("\tParametros: " + parameters);
+
+        //inicio da implementacao do aluno
+        boolean isDir = false;
+        if (parameters.startsWith("-R ")) {
+        	isDir = true;
+        	parameters = parameters.substring(3);
+        }
+        
+        Diretorio aux;
+		int i = 1;
+		if (parameters.startsWith("../")) aux = this.atual.getPai();
+		else if (parameters.startsWith("./")) aux = this.atual;
+		else {
+			if (!parameters.startsWith("/")) i = 0;
+			aux = this.raiz;
+		}
+		
+		String[] caminho = parameters.split("/");
+		for (; i<(caminho.length-1); i++) {
+			if (aux.getMapDir().containsKey(caminho[i])) {
+				aux = aux.getMapDir().get(caminho[i]);
+			}
+			else {
+				result = "rm: Diretório "+parameters+"não existe. (Nada foi removido)";
+				return result;
+			}
+		}
+		if (isDir) {
+			if (aux.getMapDir().containsKey(caminho[i])) {
+				Diretorio target = aux.getMapDir().get(caminho[i]);
+				aux.getMapDir().remove(target.getNome());
+			} else result = "rm: Diretório "+parameters+" não existe. (Nada foi removido)";
+		} else {
+			if (aux.getMapFiles().containsKey(caminho[i])) {
+				Arquivo target = aux.getMapFiles().get(caminho[i]);
+				aux.getMapFiles().remove(target.getNome());
+			} else result = "rm: Arquivo "+parameters+" não existe. (Nada foi removido)";
+		}
+        //fim da implementacao do aluno
+        return result;
+    }
+
+    
+    // * * * P E N D E N T E S * * *    
+    public String cp(String parameters) {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: cp");
+        System.out.println("\tParametros: " + parameters);
+
+        //inicio da implementacao do aluno
+        //fim da implementacao do aluno
+        return result;
+    }
+
+    public String mv(String parameters) {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: mv");
+        System.out.println("\tParametros: " + parameters);
+
+        //inicio da implementacao do aluno
+        //fim da implementacao do aluno
+        return result;
+    }
+    
+    public String chmod(String parameters) {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: chmod");
+        System.out.println("\tParametros: " + parameters);
+
+        //inicio da implementacao do aluno
         //fim da implementacao do aluno
         return result;
     }
@@ -347,28 +421,6 @@ public class MyKernel implements Kernel {
         return result;
     }
 
-    // COMPLETA
-    public String info() {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: info");
-        System.out.println("\tParametros: sem parametros");
-
-        //nome do aluno
-        String name = "Bruno Ribeiro Batista";
-        //numero de matricula
-        String registration = "202111020022";
-        //versao do sistema de arquivos
-        String version = "0.1";
-
-        result += "Nome do Aluno:        " + name;
-        result += "\nMatricula do Aluno:   " + registration;
-        result += "\nVersao do Kernel:     " + version;
-
-        return result;
-    }
-
-    
     // FUNÇÕES UTITLITARIAS
     public static String checkMonth(int month) {
 		if (month == 1) return "Jan";
