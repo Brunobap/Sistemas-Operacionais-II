@@ -24,7 +24,7 @@ public class MyKernel implements Kernel {
     	this.atual = this.raiz;
     }
 
-    // TODO: 8 de 11 funções completas
+    // TODO: 9 de 13 funções completas
     
     // *** C O M P L E T A S ***
     public String ls(String parameters) {
@@ -363,6 +363,59 @@ public class MyKernel implements Kernel {
         //fim da implementacao do aluno
         return result;
     }
+    public String chmod(String parameters) {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: chmod");
+        System.out.println("\tParametros: " + parameters);
+
+        //inicio da implementacao do aluno
+        boolean isDir = false;
+        if (parameters.startsWith("-R ")) {
+        	isDir = true;
+        	parameters = parameters.substring(3);
+        }
+        
+        Diretorio aux;
+		int i = 1;
+		if (parameters.startsWith("../")) aux = this.atual.getPai();
+		else if (parameters.startsWith("./")) aux = this.atual;
+		else {
+			if (!parameters.startsWith("/")) i = 0;
+			aux = this.raiz;
+		}
+		
+		String[] paramRedux = parameters.split(" ", 2);
+		String[] caminho = paramRedux[1].split("/");
+		for (; i<(caminho.length-1); i++) {
+			if (aux.getMapDir().containsKey(caminho[i])) {
+				aux = aux.getMapDir().get(caminho[i]);
+			} else {
+				result = "chmod: Diretório "+parameters+" não existe. (Nada foi modificado)";
+				return result;
+			}
+		}
+		if (isDir) {
+			if (aux.getMapDir().containsKey(caminho[i])) {
+				Diretorio target = aux.getMapDir().get(caminho[i]);				
+				String strPermit = findPermit(paramRedux[0]);
+				
+				for (Diretorio d: target.getMapDir().values())
+					d.setPermissao("d"+strPermit);
+				for (Arquivo a: target.getMapFiles().values())
+					a.setPermissao("-"+strPermit);
+					
+			} else result = "chmod: Diretório "+parameters+" não existe. (Nada foi modificado)";
+		} else {
+			if (aux.getMapFiles().containsKey(caminho[i])) {
+				Arquivo target = aux.getMapFiles().get(caminho[i]);				
+				String strPermit = findPermit(paramRedux[0]);
+				target.setPermissao("-"+strPermit);
+			} else result = "chmod: Arquivo "+parameters+" não existe. (Nada foi modificado)";
+		}
+        //fim da implementacao do aluno
+        return result;
+    }
 
     
     // * * * P E N D E N T E S * * *    
@@ -387,18 +440,7 @@ public class MyKernel implements Kernel {
         //fim da implementacao do aluno
         return result;
     }
-    
-    public String chmod(String parameters) {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: chmod");
-        System.out.println("\tParametros: " + parameters);
-
-        //inicio da implementacao do aluno
-        //fim da implementacao do aluno
-        return result;
-    }
-
+        
     public String batch(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -437,4 +479,58 @@ public class MyKernel implements Kernel {
 		else if (month == 12) return "Dec";
 		else return "-";
 	}
+    
+    public static int[] intToBinary(int value, int size) {
+        if (value > Math.pow(2, size) - 1) {
+            return null;
+        }
+        int bin[] = new int[size];
+        int i = 0;
+        while (value > 0 && i < size) {
+            int num = value % 2;
+            value = value / 2;
+            bin[i] = num;
+            i++;
+        }
+        for (int j = 0; j <= size / 2; j++) {
+            int temp = bin[j];
+            bin[j] = bin[size - j - 1];
+            bin[size - j - 1] = temp;
+        }
+        return bin;
+    }
+    
+    public static String findPermit(String entrada) {
+    	int nPerm1, nPerm2, nPerm3;
+		nPerm1 = Integer.parseInt(entrada.charAt(0)+"");
+		nPerm2 = Integer.parseInt(entrada.charAt(1)+"");
+		nPerm3 = Integer.parseInt(entrada.charAt(2)+"");
+		
+		int[] bPerm1, bPerm2, bPerm3;
+		bPerm1 = intToBinary(nPerm1, 3);
+		bPerm2 = intToBinary(nPerm2, 3);
+		bPerm3 = intToBinary(nPerm3, 3);
+		
+		String strPermit = "";
+		if (bPerm1[0]==1) strPermit += "r";
+		else strPermit += "-";
+		if (bPerm1[1]==1) strPermit += "w";
+		else strPermit += "-";
+		if (bPerm1[2]==1) strPermit += "x";
+		else strPermit += "-";
+		if (bPerm2[0]==1) strPermit += "r";
+		else strPermit += "-";
+		if (bPerm2[1]==1) strPermit += "w";
+		else strPermit += "-";
+		if (bPerm2[2]==1) strPermit += "x";
+		else strPermit += "-";
+		if (bPerm3[0]==1) strPermit += "r";
+		else strPermit += "-";
+		if (bPerm3[1]==1) strPermit += "w";
+		else strPermit += "-";
+		if (bPerm3[2]==1) strPermit += "x";
+		else strPermit += "-";
+		
+		return strPermit;
+    }
 }

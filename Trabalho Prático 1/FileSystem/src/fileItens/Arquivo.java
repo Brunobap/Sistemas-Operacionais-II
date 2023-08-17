@@ -14,6 +14,6 @@ public class Arquivo extends Item {
 	public Arquivo(Diretorio pai, String nome, String conteudo) {
 		super(nome, pai);
 		this.setConteudo(conteudo);
-		this.setPermissao("-rwx------");
+		this.setPermissao("-rwxrwxrwx");
 	}
 }

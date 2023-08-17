@@ -27,7 +27,7 @@ public class Diretorio extends Item {
 		super(nome, pai);
 		if (this.getPai() == null) this.setPai(this);
 		this.setCriacao(new Date());
-		this.setPermissao("drwx------");
+		this.setPermissao("drwxrwxrwx");
 		this.mapDir = new HashMap<String, Diretorio>();
 		this.mapFiles = new HashMap<String, Arquivo>();
 	}
