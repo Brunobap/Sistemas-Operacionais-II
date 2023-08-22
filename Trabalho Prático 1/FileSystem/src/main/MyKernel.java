@@ -24,7 +24,7 @@ public class MyKernel implements Kernel {
     	this.atual = this.raiz;
     }
 
-    // TODO: 9 de 13 funções completas
+    // TODO: 10 de 13 funções completas
     
     // *** C O M P L E T A S ***
     public String ls(String parameters) {
@@ -122,8 +122,9 @@ public class MyKernel implements Kernel {
     			if (!parameters.startsWith("/")) i = 0;
     			aux = this.raiz;
     		}
-    		
+    		    		
     		String[] caminho = parameters.split("/");
+    		if (caminho[caminho.length-1].contains(".") || caminho[caminho.length-1].contains(" ")) return "mkdir: Nome de diretório inválido. (Nada foi criado)";
     		for (; i<caminho.length; i++) {
     			if (aux.getMapDir().containsKey(caminho[i])) {
     				aux = aux.getMapDir().get(caminho[i]);
@@ -136,8 +137,7 @@ public class MyKernel implements Kernel {
     				aux = novo;
     				result = "";
     			}
-    		}
-    		
+    		}    		
     	}        	
         //fim da implementacao do aluno
         
@@ -221,6 +221,7 @@ public class MyKernel implements Kernel {
 			result = "createfile: Arquivo já existe. Não foi posível criá-lo.";
 		else {
 			String infoFile[] = caminho[i].split(" ", 2);
+			if (infoFile[0].contains(" ")) return "createfile: Nome de arquivo inválido. (Nada foi criado)";
 			String conteudo = infoFile[1].replaceAll("\\\\n", "\n");
 			Arquivo novo = new Arquivo(aux, infoFile[0], conteudo);
 			
@@ -416,7 +417,80 @@ public class MyKernel implements Kernel {
         //fim da implementacao do aluno
         return result;
     }
+    public String mv(String parameters) {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: mv");
+        System.out.println("\tParametros: " + parameters);
 
+        //inicio da implementacao do aluno
+        Diretorio aux1, aux2;
+		String[] paramSplit = parameters.split(" ");
+		
+		int i = 1;
+		if (paramSplit[0].startsWith("../")) aux1 = this.atual.getPai();
+		else if (paramSplit[0].startsWith("./")) aux1 = this.atual;
+		else {
+			if (!paramSplit[0].startsWith("/")) i = 0;
+			aux1 = this.raiz;
+		}
+		
+		String[] caminho = paramSplit[0].split("/");
+		String[] alvo = paramSplit[1].split("/");
+		for (; i<(caminho.length-1); i++) {
+			if (aux1.getMapDir().containsKey(caminho[i])) {
+				aux1 = aux1.getMapDir().get(caminho[i]);
+			} else if (caminho[i].equals("..")) { 
+				aux1 = aux1.getPai();
+			} else if (!caminho[i].equals(".")) return "mv: Arquivo/Diretório não existe.";
+		}		
+
+		i = 1;
+		
+		if (paramSplit[1].startsWith("../")) aux2 = this.atual.getPai();
+		else if (paramSplit[1].startsWith("./")) aux2 = this.atual;
+		else {
+			if (!paramSplit[1].startsWith("/")) i = 0;
+			aux2 = this.raiz;
+		}
+		for (; i<(alvo.length-1); i++) {
+			if (aux2.getMapDir().containsKey(alvo[i])) {
+				aux2 = aux2.getMapDir().get(alvo[i]);
+			} else if (alvo[i].equals("..")) { 
+				aux2 = aux2.getPai();
+			} else if (!alvo[i].equals(".")) return "mv: Arquivo/Diretório não existe.";
+		}
+			
+		// Pastas  iguais, renomear
+		if (aux1 == aux2) {
+			if (aux1.getMapFiles().containsKey(caminho[caminho.length-1])) {
+				Arquivo a = aux1.getMapFiles().get(caminho[caminho.length-1]);
+				a.setNome(alvo[alvo.length-1]);
+				
+			} else if (aux1.getMapDir().containsKey(caminho[caminho.length-1])) {
+				Diretorio d = aux1.getMapDir().get(caminho[caminho.length-1]);
+				d.setNome(alvo[alvo.length-1]);
+				
+			} else return "mv: Arquivo/Diretório não existe. (Nada foi renomeado)";				
+		
+		// Pastas diferentes, mover
+		} else {
+			if (aux1.getMapFiles().containsKey(caminho[caminho.length-1])) {
+				Arquivo a = aux1.getMapFiles().get(caminho[caminho.length-1]);
+				aux1.getMapFiles().remove(a.getNome());
+				aux2.getMapFiles().put(a.getNome(), a);
+				
+			} else if (aux1.getMapDir().containsKey(caminho[caminho.length-1])) {
+				Diretorio d = aux1.getMapDir().get(caminho[caminho.length-1]);
+				aux1.getMapDir().remove(d.getNome());
+				aux2.getMapDir().put(d.getNome(), d);
+				
+			} else return "mv: Arquivo/Diretório não existe. (Nada foi movido)";	
+		}
+        //fim da implementacao do aluno
+        return result;
+    }
+    
     
     // * * * P E N D E N T E S * * *    
     public String cp(String parameters) {
@@ -426,20 +500,80 @@ public class MyKernel implements Kernel {
         System.out.println("\tParametros: " + parameters);
 
         //inicio da implementacao do aluno
+        boolean isDir = false;
+        if (parameters.startsWith("-R ")) {
+        	isDir = true;
+        	parameters = parameters.substring(3);
+        }
+        
+        Diretorio aux1, aux2;
+		String[] paramSplit = parameters.split(" ");
+		
+		int i = 1;
+		if (paramSplit[0].startsWith("../")) aux1 = this.atual.getPai();
+		else if (paramSplit[0].startsWith("./")) aux1 = this.atual;
+		else {
+			if (!paramSplit[0].startsWith("/")) i = 0;
+			aux1 = this.raiz;
+		}
+		
+		String[] caminho = paramSplit[0].split("/");
+		String[] alvo = paramSplit[1].split("/");
+		for (; i<(caminho.length-1); i++) {
+			if (aux1.getMapDir().containsKey(caminho[i])) {
+				aux1 = aux1.getMapDir().get(caminho[i]);
+			} else if (caminho[i].equals("..")) { 
+				aux1 = aux1.getPai();
+			} else if (!caminho[i].equals(".")) return "mv: Arquivo/Diretório não existe.";
+		}		
+
+		i = 1;
+		
+		if (paramSplit[1].startsWith("../")) aux2 = this.atual.getPai();
+		else if (paramSplit[1].startsWith("./")) aux2 = this.atual;
+		else {
+			if (!paramSplit[1].startsWith("/")) i = 0;
+			aux2 = this.raiz;
+		}
+		for (; i<(alvo.length-1); i++) {
+			if (aux2.getMapDir().containsKey(alvo[i])) {
+				aux2 = aux2.getMapDir().get(alvo[i]);
+			} else if (alvo[i].equals("..")) { 
+				aux2 = aux2.getPai();
+			} else if (!alvo[i].equals(".")) return "mv: Arquivo/Diretório não existe.";
+		}
+			
+		// Copiar sem renomear
+		if (paramSplit[1].endsWith("/")) {
+			if (isDir) {
+				
+			} else {
+				if (aux1.getMapFiles().containsKey(caminho[caminho.length-1])) {
+					Arquivo molde = aux1.getMapFiles().get(caminho[caminho.length-1]);
+					Arquivo novo = new Arquivo(aux2, molde);
+					aux2.getMapFiles().put(novo.getNome(), novo);
+					
+				} else return "cp: Arquivo não foi encontrado. (Nada foi copiado)";
+			}
+			
+		// Copiar com novo nome
+		} else {
+			if (isDir) {
+				
+			} else {
+				if (aux1.getMapFiles().containsKey(caminho[caminho.length-1])) {
+					Arquivo molde = aux1.getMapFiles().get(caminho[caminho.length-1]);
+					Arquivo novo = new Arquivo(aux2, alvo[alvo.length-1], molde);
+					aux2.getMapFiles().put(novo.getNome(), novo);
+					
+				} else return "cp: Arquivo não foi encontrado. (Nada foi copiado)";
+			}
+		}
+
         //fim da implementacao do aluno
         return result;
     }
 
-    public String mv(String parameters) {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: mv");
-        System.out.println("\tParametros: " + parameters);
-
-        //inicio da implementacao do aluno
-        //fim da implementacao do aluno
-        return result;
-    }
         
     public String batch(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário

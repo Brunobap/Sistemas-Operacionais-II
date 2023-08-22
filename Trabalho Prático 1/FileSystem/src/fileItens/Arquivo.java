@@ -10,10 +10,27 @@ public class Arquivo extends Item {
 	public void setConteudo(String conteudo) {
 		this.conteudo = conteudo;
 	}
+	
+	public Arquivo copiar(Diretorio pai) {
+		Arquivo novo = new Arquivo(pai, this);
+		return novo;
+	}
 
 	public Arquivo(Diretorio pai, String nome, String conteudo) {
 		super(nome, pai);
 		this.setConteudo(conteudo);
 		this.setPermissao("-rwxrwxrwx");
+	}
+	
+	public Arquivo(Diretorio pai, Arquivo molde) {
+		super(molde.getNome(), pai);
+		this.setConteudo(molde.getConteudo());
+		this.setPermissao(molde.getPermissao());
+	}
+	
+	public Arquivo(Diretorio pai, String nome, Arquivo molde) {
+		super(nome, pai);
+		this.setConteudo(molde.getConteudo());
+		this.setPermissao(molde.getPermissao());
 	}
 }

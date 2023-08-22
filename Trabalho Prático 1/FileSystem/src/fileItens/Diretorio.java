@@ -22,6 +22,11 @@ public class Diretorio extends Item {
 		this.mapFiles = mapFiles;
 	}
 	
+	public Diretorio copiar(Diretorio pai) {
+		Diretorio novo = new Diretorio(pai, this);
+		return novo;
+	}
+	
 	// ctor pras outras pastas
 	public Diretorio (Diretorio pai, String nome) {
 		super(nome, pai);
@@ -31,4 +36,14 @@ public class Diretorio extends Item {
 		this.mapDir = new HashMap<String, Diretorio>();
 		this.mapFiles = new HashMap<String, Arquivo>();
 	}
+	
+	public Diretorio (Diretorio pai, Diretorio molde) {
+		super(molde.getNome(), pai);
+		if (this.getPai() == null) this.setPai(this);
+		this.setCriacao(new Date());
+		this.setPermissao(molde.getPermissao());
+		this.mapDir = new HashMap<String, Diretorio>();
+		this.mapFiles = new HashMap<String, Arquivo>();
+	}
+	
 }

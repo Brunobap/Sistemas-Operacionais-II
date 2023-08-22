@@ -41,7 +41,7 @@ public class Item {
 	public void setCaminho(String caminho) {
 		this.caminho = caminho;
 	}	
-	
+		
 	public Item(String nome, Diretorio pai) {
 		this.nome = nome;
 		this.criacao = new Date();
