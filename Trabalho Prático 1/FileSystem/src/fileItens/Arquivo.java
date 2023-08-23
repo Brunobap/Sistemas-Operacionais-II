@@ -11,10 +11,6 @@ public class Arquivo extends Item {
 		this.conteudo = conteudo;
 	}
 	
-	public Arquivo copiar(Diretorio pai) {
-		Arquivo novo = new Arquivo(pai, this);
-		return novo;
-	}
 
 	public Arquivo(Diretorio pai, String nome, String conteudo) {
 		super(nome, pai);

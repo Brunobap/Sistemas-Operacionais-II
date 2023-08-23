@@ -23,7 +23,17 @@ public class Diretorio extends Item {
 	}
 	
 	public Diretorio copiar(Diretorio pai) {
-		Diretorio novo = new Diretorio(pai, this);
+		Diretorio novo = new Diretorio(pai,this);
+		
+		for (Arquivo a : this.getMapFiles().values()) {
+			Arquivo addF = new Arquivo(novo,a);
+			novo.getMapFiles().put(addF.getNome(), addF);
+		}
+		for (Diretorio d : this.getMapDir().values()) {
+			Diretorio addD = d.copiar(novo);
+			novo.getMapDir().put(addD.getNome(), addD);
+		}
+		
 		return novo;
 	}
 	

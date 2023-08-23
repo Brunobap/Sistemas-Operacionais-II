@@ -24,7 +24,7 @@ public class MyKernel implements Kernel {
     	this.atual = this.raiz;
     }
 
-    // TODO: 10 de 13 funções completas
+    // TODO: 11 de 13 funções completas
     
     // *** C O M P L E T A S ***
     public String ls(String parameters) {
@@ -490,9 +490,6 @@ public class MyKernel implements Kernel {
         //fim da implementacao do aluno
         return result;
     }
-    
-    
-    // * * * P E N D E N T E S * * *    
     public String cp(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -524,9 +521,13 @@ public class MyKernel implements Kernel {
 				aux1 = aux1.getMapDir().get(caminho[i]);
 			} else if (caminho[i].equals("..")) { 
 				aux1 = aux1.getPai();
-			} else if (!caminho[i].equals(".")) return "mv: Arquivo/Diretório não existe.";
+			} else if (!caminho[i].equals(".")) return "cp: Arquivo/Diretório não existe.";
 		}		
 
+		int j;
+		if (parameters.endsWith("/")) j=0;
+		else j=1;
+				
 		i = 1;
 		
 		if (paramSplit[1].startsWith("../")) aux2 = this.atual.getPai();
@@ -535,19 +536,26 @@ public class MyKernel implements Kernel {
 			if (!paramSplit[1].startsWith("/")) i = 0;
 			aux2 = this.raiz;
 		}
-		for (; i<(alvo.length-1); i++) {
+		for (; i<(alvo.length-j); i++) {
 			if (aux2.getMapDir().containsKey(alvo[i])) {
 				aux2 = aux2.getMapDir().get(alvo[i]);
 			} else if (alvo[i].equals("..")) { 
 				aux2 = aux2.getPai();
-			} else if (!alvo[i].equals(".")) return "mv: Arquivo/Diretório não existe.";
+			} else if (!alvo[i].equals(".")) return "cp: Arquivo/Diretório não existe.";
 		}
 			
 		// Copiar sem renomear
 		if (paramSplit[1].endsWith("/")) {
 			if (isDir) {
+				if (aux2.getMapDir().containsKey(alvo[alvo.length-1])) return "cp: O diretório já existe. (Nada foi copiado)";
+				if (aux1.getMapDir().containsKey(caminho[caminho.length-1])) {
+					Diretorio copiado = aux1.getMapDir().get(caminho[caminho.length-1]);
+					Diretorio copia = copiado.copiar(aux2);
+					aux2.getMapDir().put(copia.getNome(), copia);
+				}
 				
 			} else {
+				if (aux2.getMapFiles().containsKey(alvo[alvo.length-1])) return "cp: O arquivo já existe. (Nada foi copiado)";
 				if (aux1.getMapFiles().containsKey(caminho[caminho.length-1])) {
 					Arquivo molde = aux1.getMapFiles().get(caminho[caminho.length-1]);
 					Arquivo novo = new Arquivo(aux2, molde);
@@ -559,8 +567,16 @@ public class MyKernel implements Kernel {
 		// Copiar com novo nome
 		} else {
 			if (isDir) {
+				if (aux2.getMapDir().containsKey(alvo[alvo.length-1])) return "cp: O diretório já existe. (Nada foi copiado)";
+				if (aux1.getMapDir().containsKey(caminho[caminho.length-1])) {
+					Diretorio copiado = aux1.getMapDir().get(caminho[caminho.length-1]);
+					Diretorio copia = copiado.copiar(aux2);
+					copia.setNome(alvo[alvo.length-1]);
+					aux2.getMapDir().put(copia.getNome(), copia);
+				}
 				
 			} else {
+				if (aux2.getMapFiles().containsKey(alvo[alvo.length-1])) return "cp: O arquivo já existe. (Nada foi copiado)";
 				if (aux1.getMapFiles().containsKey(caminho[caminho.length-1])) {
 					Arquivo molde = aux1.getMapFiles().get(caminho[caminho.length-1]);
 					Arquivo novo = new Arquivo(aux2, alvo[alvo.length-1], molde);
@@ -574,7 +590,8 @@ public class MyKernel implements Kernel {
         return result;
     }
 
-        
+    
+    // * * * P E N D E N T E S * * *           
     public String batch(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
