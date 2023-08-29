@@ -1,0 +1,6 @@
+mkdir teste/a/../b/../c
+ls teste
+createfile teste/teste.txt teste\nteste
+cat teste/teste.txt
+ls -l teste
+dump C:\Users\bruno\Desktop\Programacao\Gits\Sistemas-Operacionais-II\Trabalho Prático 1\emTeste.txt

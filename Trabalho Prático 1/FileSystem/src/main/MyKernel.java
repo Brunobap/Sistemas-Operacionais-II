@@ -1,5 +1,10 @@
 package main;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+
 import fileItens.Arquivo;
 import fileItens.Diretorio;
 /*
@@ -17,14 +22,16 @@ public class MyKernel implements Kernel {
 	
 	private Diretorio atual;
 	private Diretorio raiz;
+	private ArrayList<String> vetComandos;
 
     public MyKernel() {
     	this.raiz = new Diretorio(null, "/");
     	this.raiz.setPai(raiz);
     	this.atual = this.raiz;
+    	this.vetComandos = new ArrayList<String>();
     }
 
-    // TODO: 11 de 13 funções completas
+    // TODO: 12 de 13 funções completas
     
     // *** C O M P L E T A S ***
     public String ls(String parameters) {
@@ -34,6 +41,7 @@ public class MyKernel implements Kernel {
         System.out.println("\tParametros: " + parameters);
 
         //inicio da implementacao do aluno
+        this.vetComandos.add("ls "+parameters);
         if (parameters.equals("")) {
         	for (Diretorio d : this.atual.getMapDir().values())
         		result += d.getNome()+" ";
@@ -112,6 +120,7 @@ public class MyKernel implements Kernel {
         System.out.println("\tParametros: " + parameters);
 
         //inicio da implementacao do aluno
+        this.vetComandos.add("mkdir "+parameters);
     	if (parameters.equals("/")) result = "mkdir: "+parameters+": Diretorio ja existe (Nenhum diretorio foi criado)";
     	else {
     		Diretorio aux;
@@ -151,6 +160,7 @@ public class MyKernel implements Kernel {
         System.out.println("\tParametros: " + parameters);
 
         //inicio da implementacao do aluno
+        this.vetComandos.add("cd "+parameters);
         //indique o diretório atual. Por exemplo... /
         currentDir = operatingSystem.fileSystem.FileSytemSimulator.currentDir;
         
@@ -197,6 +207,7 @@ public class MyKernel implements Kernel {
         System.out.println("\tParametros: " + parameters);
 
         //inicio da implementacao do aluno
+        this.vetComandos.add("createfile "+parameters);
         Diretorio aux;
 		int i = 1;
 		if (parameters.startsWith("../")) aux = this.atual.getPai();
@@ -238,6 +249,7 @@ public class MyKernel implements Kernel {
         System.out.println("\tParametros: " + parameters);
 
         //inicio da implementacao do aluno
+        this.vetComandos.add("cat "+parameters);
         Diretorio aux;
 		int i = 1;
 		if (parameters.startsWith("../")) aux = this.atual.getPai();
@@ -268,6 +280,7 @@ public class MyKernel implements Kernel {
         System.out.println("Chamada de Sistema: info");
         System.out.println("\tParametros: sem parametros");
 
+        this.vetComandos.add("info");
         //nome do aluno
         String name = "Bruno Ribeiro Batista";
         //numero de matricula
@@ -288,6 +301,7 @@ public class MyKernel implements Kernel {
         System.out.println("\tParametros: " + parameters);
 
         //inicio da implementacao do aluno
+        this.vetComandos.add("rmdir "+parameters);
         Diretorio aux;
 		int i = 1;
 		if (parameters.startsWith("../")) aux = this.atual.getPai();
@@ -325,6 +339,7 @@ public class MyKernel implements Kernel {
         System.out.println("\tParametros: " + parameters);
 
         //inicio da implementacao do aluno
+        this.vetComandos.add("rm "+parameters);
         boolean isDir = false;
         if (parameters.startsWith("-R ")) {
         	isDir = true;
@@ -371,6 +386,7 @@ public class MyKernel implements Kernel {
         System.out.println("\tParametros: " + parameters);
 
         //inicio da implementacao do aluno
+        this.vetComandos.add("chmod "+parameters);
         boolean isDir = false;
         if (parameters.startsWith("-R ")) {
         	isDir = true;
@@ -424,6 +440,7 @@ public class MyKernel implements Kernel {
         System.out.println("\tParametros: " + parameters);
 
         //inicio da implementacao do aluno
+        this.vetComandos.add("mv "+parameters);
         Diretorio aux1, aux2;
 		String[] paramSplit = parameters.split(" ");
 		
@@ -497,6 +514,7 @@ public class MyKernel implements Kernel {
         System.out.println("\tParametros: " + parameters);
 
         //inicio da implementacao do aluno
+        this.vetComandos.add("cp "+parameters);
         boolean isDir = false;
         if (parameters.startsWith("-R ")) {
         	isDir = true;
@@ -589,7 +607,32 @@ public class MyKernel implements Kernel {
         //fim da implementacao do aluno
         return result;
     }
+    public String dump(String parameters) {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: dump");
+        System.out.println("\tParametros: " + parameters);
 
+        //inicio da implementacao do aluno
+        this.vetComandos.add("dump "+parameters);
+        String strSaida = "";
+        
+        try {
+            PrintWriter arq = new PrintWriter(parameters, "UTF-8");
+            for (String s : this.vetComandos)
+            		arq.println(s);
+            arq.close();
+            result += "Dump criado com sucesso.";
+            
+        } catch (IOException e) {
+        	result += "Erro ao criar dump.";
+        	System.err.println(e);
+        }
+        //fim da implementacao do aluno
+        return result;
+    }
+
+    
     
     // * * * P E N D E N T E S * * *           
     public String batch(String parameters) {
@@ -599,36 +642,31 @@ public class MyKernel implements Kernel {
         System.out.println("\tParametros: " + parameters);
 
         //inicio da implementacao do aluno
+        this.vetComandos.add("batch "+parameters);
+        
         //fim da implementacao do aluno
         return result;
     }
 
-    public String dump(String parameters) {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: dump");
-        System.out.println("\tParametros: " + parameters);
-
-        //inicio da implementacao do aluno
-        //fim da implementacao do aluno
-        return result;
-    }
-
+    
     // FUNÇÕES UTITLITARIAS
     public static String checkMonth(int month) {
-		if (month == 1) return "Jan";
-		else if (month == 2) return "Feb";
-		else if (month == 3) return "Mar";
-		else if (month == 4) return "Apr";
-		else if (month == 5) return "May";
-		else if (month == 6) return "Jun";
-		else if (month == 7) return "Jul";
-		else if (month == 8) return "Aug";
-		else if (month == 9) return "Sep";
-		else if (month == 10) return "Oct";
-		else if (month == 11) return "Nov";
-		else if (month == 12) return "Dec";
-		else return "-";
+    	switch (month) {
+			case 1:  return "Jan";
+			case 2: return "Feb";
+			case 3: return "Mar";
+			case 4: return "Apr";
+			case 5: return "May";
+			case 6: return "Jun";
+			case 7: return "Jul";
+			case 8: return "Aug";
+			case 9: return "Sep";
+			case 10: return "Oct";
+			case 11: return "Nov";
+			case 12: return "Dec";
+			
+			default: return "-";
+    	}
 	}
     
     public static int[] intToBinary(int value, int size) {
