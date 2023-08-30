@@ -1,0 +1,5 @@
+mkdir a
+mkdir b
+ls 
+createfile a/teste1.txt teste1
+cat a/teste1.txt

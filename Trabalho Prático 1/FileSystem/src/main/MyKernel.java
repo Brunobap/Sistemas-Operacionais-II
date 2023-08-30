@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 import fileItens.Arquivo;
 import fileItens.Diretorio;
@@ -31,7 +32,7 @@ public class MyKernel implements Kernel {
     	this.vetComandos = new ArrayList<String>();
     }
 
-    // TODO: 12 de 13 funções completas
+    // TODO: 13 de 13 funções completas :)
     
     // *** C O M P L E T A S ***
     public String ls(String parameters) {
@@ -286,7 +287,7 @@ public class MyKernel implements Kernel {
         //numero de matricula
         String registration = "202111020022";
         //versao do sistema de arquivos
-        String version = "0.1";
+        String version = "1.0";
 
         result += "Nome do Aluno:        " + name;
         result += "\nMatricula do Aluno:   " + registration;
@@ -614,7 +615,6 @@ public class MyKernel implements Kernel {
         System.out.println("\tParametros: " + parameters);
 
         //inicio da implementacao do aluno
-        this.vetComandos.add("dump "+parameters);
         String strSaida = "";
         
         try {
@@ -628,13 +628,10 @@ public class MyKernel implements Kernel {
         	result += "Erro ao criar dump.";
         	System.err.println(e);
         }
+        this.vetComandos.add("dump "+parameters);
         //fim da implementacao do aluno
         return result;
     }
-
-    
-    
-    // * * * P E N D E N T E S * * *           
     public String batch(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -643,14 +640,47 @@ public class MyKernel implements Kernel {
 
         //inicio da implementacao do aluno
         this.vetComandos.add("batch "+parameters);
-        
+        try {
+            File arq = new File(parameters);
+            Scanner leit = new Scanner(arq);
+            
+            while (leit.hasNextLine())
+            	executar(leit.nextLine());            
+            leit.close();
+            
+            result += "Comandos foram executados.";
+            	
+		} catch (Exception e) {
+			System.err.println(e);
+			result += "Arquivo não existe.";
+		}
         //fim da implementacao do aluno
         return result;
     }
-
+          
     
     // FUNÇÕES UTITLITARIAS
-    public static String checkMonth(int month) {
+    private String executar(String linha) {
+    	String[] info = linha.split(" ",2);
+    	switch (info[0]) {
+			case "ls": return this.ls(info[1]);
+			case "mkdir": return this.mkdir(info[1]);
+			case "cd": return this.cd(info[1]);	
+			case "createfile": return this.createfile(info[1]);
+			case "cat": return this.cat(info[1]);
+			case "info": return this.info();	
+			case "rmdir": return this.rmdir(info[1]);
+			case "rm": return this.rm(info[1]);
+			case "chmod": return this.chmod(info[1]);	
+			case "mv": return this.mv(info[1]);
+			case "cp": return this.cp(info[1]);
+			case "dump": return this.dump(info[1]);			
+			
+			default: return "";
+		}
+    }
+    
+    private static String checkMonth(int month) {
     	switch (month) {
 			case 1:  return "Jan";
 			case 2: return "Feb";
@@ -669,7 +699,7 @@ public class MyKernel implements Kernel {
     	}
 	}
     
-    public static int[] intToBinary(int value, int size) {
+    private static int[] intToBinary(int value, int size) {
         if (value > Math.pow(2, size) - 1) {
             return null;
         }
@@ -689,7 +719,7 @@ public class MyKernel implements Kernel {
         return bin;
     }
     
-    public static String findPermit(String entrada) {
+    private static String findPermit(String entrada) {
     	int nPerm1, nPerm2, nPerm3;
 		nPerm1 = Integer.parseInt(entrada.charAt(0)+"");
 		nPerm2 = Integer.parseInt(entrada.charAt(1)+"");
