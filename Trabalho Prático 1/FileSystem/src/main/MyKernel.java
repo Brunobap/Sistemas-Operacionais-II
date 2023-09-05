@@ -64,31 +64,13 @@ public class MyKernel implements Kernel {
         			(a.getCriacao().getHours()+":"+a.getCriacao().getMinutes())+" "+
         			a.getNome()+"\n";
         	
-        } else {
-        	Diretorio aux;
-        	int i = 1;
-        	
+        } else {        	
         	String paramRedux = parameters;
         	if (parameters.startsWith("-l ")) paramRedux = parameters.substring(3,parameters.length());
+
+        	Diretorio aux = this.encontrar(paramRedux);
+        	if (aux == null) return "ls: Diretório não foi encontrado.";
         	
-            if (paramRedux.startsWith("../")) {
-            	aux = this.atual.getPai();
-            } else if (paramRedux.startsWith("./")) {
-            	aux = this.atual;
-            } else {
-    			if (!paramRedux.startsWith("/")) i = 0;
-    			aux = this.raiz;
-    		}
-            
-            String[] caminho = paramRedux.split("/");
-    		for (; i<caminho.length; i++) {
-    			if (aux.getMapDir().containsKey(caminho[i])) {
-    				aux = aux.getMapDir().get(caminho[i]);
-    			} else if (caminho[i].equals("..")) {					
-					aux = aux.getPai();
-				} else if (!caminho[i].equals(".")) return "ls: Diretório não existe.";
-    		}
-    		
     		if (parameters.startsWith("-l ")) {
 	    		for (Diretorio d : aux.getMapDir().values())
 	        		result += 
@@ -165,34 +147,8 @@ public class MyKernel implements Kernel {
         //indique o diretório atual. Por exemplo... /
         currentDir = operatingSystem.fileSystem.FileSytemSimulator.currentDir;
         
-        Diretorio aux;
-        int i = 1;
-        if (parameters.startsWith("../")) {
-        	aux = this.atual.getPai();
-        	currentDir.substring(0, this.atual.getNome().length());
-        } else if (parameters.startsWith("./")) {
-        	aux = this.atual;
-        } else {
-			if (!parameters.startsWith("/")) i = 0;
-			aux = this.raiz;
-			currentDir = "/";
-		}
-        
-        String[] caminho = parameters.split("/");
-		for (; i<caminho.length; i++) {
-			if (aux.getMapDir().containsKey(caminho[i])) {
-				aux = aux.getMapDir().get(caminho[i]);
-				if (!currentDir.equals("/")) currentDir += "/";
-				currentDir += caminho[i];
-			} else {
-				if (caminho[i].equals("..")) {					
-					if (aux != this.raiz) {
-						currentDir = currentDir.substring(0, currentDir.length()-(aux.getNome().length()+1));
-						aux = aux.getPai();
-					}
-				} else if (!caminho[i].equals("."))	return parameters+": Diretório não existe.";
-			}
-		}
+        Diretorio aux = encontrar(parameters);
+        if (aux == null) return "cd: Diretório não foi encontrado.";
 		this.atual = aux;
 
         //setando parte gráfica do diretorio atual
@@ -209,30 +165,14 @@ public class MyKernel implements Kernel {
 
         //inicio da implementacao do aluno
         this.vetComandos.add("createfile "+parameters);
-        Diretorio aux;
-		int i = 1;
-		if (parameters.startsWith("../")) aux = this.atual.getPai();
-		else if (parameters.startsWith("./")) aux = this.atual;
-		else {
-			if (!parameters.startsWith("/")) i = 0;
-			aux = this.raiz;
-		}
-		
-		String[] caminho = parameters.split("/");
-		for (; i<(caminho.length-1); i++) {
-			if (aux.getMapDir().containsKey(caminho[i])) {
-				aux = aux.getMapDir().get(caminho[i]);
-			}
-			else {
-				result = "createfile: Diretório não existe. Não foi possível criar arquivo.";
-				return result;
-			}
-		}
-		
-		if (aux.getMapFiles().containsKey(caminho[i])) 
+        Diretorio aux = encontrar(parameters.substring(0, parameters.lastIndexOf("/")));
+        String[] caminho = parameters.split("/");
+        if (aux == null) return "createfile: Diretório não encontrado. (Nenhum arquivo criado)";
+        
+		if (aux.getMapFiles().containsKey(caminho[caminho.length-1])) 
 			result = "createfile: Arquivo já existe. Não foi posível criá-lo.";
 		else {
-			String infoFile[] = caminho[i].split(" ", 2);
+			String infoFile[] = caminho[caminho.length-1].split(" ", 2);
 			if (infoFile[0].contains(" ")) return "createfile: Nome de arquivo inválido. (Nada foi criado)";
 			String conteudo = infoFile[1].replaceAll("\\\\n", "\n");
 			Arquivo novo = new Arquivo(aux, infoFile[0], conteudo);
@@ -251,25 +191,11 @@ public class MyKernel implements Kernel {
 
         //inicio da implementacao do aluno
         this.vetComandos.add("cat "+parameters);
-        Diretorio aux;
-		int i = 1;
-		if (parameters.startsWith("../")) aux = this.atual.getPai();
-		else if (parameters.startsWith("./")) aux = this.atual;
-		else {
-			if (!parameters.startsWith("/")) i = 0;
-			aux = this.raiz;
-		}
-		
-		String[] caminho = parameters.split("/");
-		for (; i<(caminho.length-1); i++) {
-			if (aux.getMapDir().containsKey(caminho[i])) {
-				aux = aux.getMapDir().get(caminho[i]);
-			} else if (caminho[i].equals("..")) { 
-				aux = aux.getPai();
-			} else if (!caminho[i].equals(".")) return "cat: Arquivo não existe.";
-		}
+        Diretorio aux = encontrar(parameters.substring(0, parameters.lastIndexOf("/")));
+        String[] caminho = parameters.split("/");
+		if (aux == null) return "cat: Arquivo não existe.";
 			
-		String infoFile[] = caminho[i].split(" ", 2);
+		String infoFile[] = caminho[caminho.length-1].split(" ", 2);
 		if (aux.getMapFiles().containsKey(infoFile[0])) result = aux.getMapFiles().get(infoFile[0]).getConteudo();
 		else result = "cat: Arquivo não existe.";
         //fim da implementacao do aluno
@@ -303,28 +229,12 @@ public class MyKernel implements Kernel {
 
         //inicio da implementacao do aluno
         this.vetComandos.add("rmdir "+parameters);
-        Diretorio aux;
-		int i = 1;
-		if (parameters.startsWith("../")) aux = this.atual.getPai();
-		else if (parameters.startsWith("./")) aux = this.atual;
-		else {
-			if (!parameters.startsWith("/")) i = 0;
-			aux = this.raiz;
-		}
+        Diretorio aux = encontrar(parameters);
+        String[] caminho = parameters.split("/");
+		if (aux == null) return "rmdir: Diretório "+parameters+"não existe. (Nada foi removido)";
 		
-		String[] caminho = parameters.split("/");
-		for (; i<(caminho.length-1); i++) {
-			if (aux.getMapDir().containsKey(caminho[i])) {
-				aux = aux.getMapDir().get(caminho[i]);
-			}
-			else {
-				result = "rmdir: Diretório "+parameters+"não existe. (Nada foi removido)";
-				return result;
-			}
-		}
-		
-		if (aux.getMapDir().containsKey(caminho[i])) {
-			Diretorio target = aux.getMapDir().get(caminho[i]);
+		if (aux.getMapDir().containsKey(caminho[caminho.length-1])) {
+			Diretorio target = aux.getMapDir().get(caminho[caminho.length-1]);
 			if (target.getMapDir().isEmpty() && target.getMapFiles().isEmpty()) 
 				aux.getMapDir().remove(target.getNome());
 			else result = "rmdir: Diretório "+parameters+" possui arquivos e/ou diretórios. (Nada foi removido)";
@@ -346,34 +256,19 @@ public class MyKernel implements Kernel {
         	isDir = true;
         	parameters = parameters.substring(3);
         }
-        
-        Diretorio aux;
-		int i = 1;
-		if (parameters.startsWith("../")) aux = this.atual.getPai();
-		else if (parameters.startsWith("./")) aux = this.atual;
-		else {
-			if (!parameters.startsWith("/")) i = 0;
-			aux = this.raiz;
-		}
-		
+
 		String[] caminho = parameters.split("/");
-		for (; i<(caminho.length-1); i++) {
-			if (aux.getMapDir().containsKey(caminho[i])) {
-				aux = aux.getMapDir().get(caminho[i]);
-			}
-			else {
-				result = "rm: Diretório "+parameters+"não existe. (Nada foi removido)";
-				return result;
-			}
-		}
+        Diretorio aux = encontrar(parameters);
+        if (aux == null) result = "rm: Diretório "+parameters+"não existe. (Nada foi removido)";
+
 		if (isDir) {
-			if (aux.getMapDir().containsKey(caminho[i])) {
-				Diretorio target = aux.getMapDir().get(caminho[i]);
+			if (aux.getMapDir().containsKey(caminho[caminho.length-1])) {
+				Diretorio target = aux.getMapDir().get(caminho[caminho.length-1]);
 				aux.getMapDir().remove(target.getNome());
 			} else result = "rm: Diretório "+parameters+" não existe. (Nada foi removido)";
 		} else {
-			if (aux.getMapFiles().containsKey(caminho[i])) {
-				Arquivo target = aux.getMapFiles().get(caminho[i]);
+			if (aux.getMapFiles().containsKey(caminho[caminho.length-1])) {
+				Arquivo target = aux.getMapFiles().get(caminho[caminho.length-1]);
 				aux.getMapFiles().remove(target.getNome());
 			} else result = "rm: Arquivo "+parameters+" não existe. (Nada foi removido)";
 		}
@@ -393,29 +288,15 @@ public class MyKernel implements Kernel {
         	isDir = true;
         	parameters = parameters.substring(3);
         }
-        
-        Diretorio aux;
-		int i = 1;
-		if (parameters.startsWith("../")) aux = this.atual.getPai();
-		else if (parameters.startsWith("./")) aux = this.atual;
-		else {
-			if (!parameters.startsWith("/")) i = 0;
-			aux = this.raiz;
-		}
-		
+
 		String[] paramRedux = parameters.split(" ", 2);
 		String[] caminho = paramRedux[1].split("/");
-		for (; i<(caminho.length-1); i++) {
-			if (aux.getMapDir().containsKey(caminho[i])) {
-				aux = aux.getMapDir().get(caminho[i]);
-			} else {
-				result = "chmod: Diretório "+parameters+" não existe. (Nada foi modificado)";
-				return result;
-			}
-		}
+        Diretorio aux = encontrar(parameters);
+        if (aux == null) return "chmod: Diretório "+parameters+" não existe. (Nada foi modificado)";
+
 		if (isDir) {
-			if (aux.getMapDir().containsKey(caminho[i])) {
-				Diretorio target = aux.getMapDir().get(caminho[i]);				
+			if (aux.getMapDir().containsKey(caminho[caminho.length-1])) {
+				Diretorio target = aux.getMapDir().get(caminho[caminho.length-1]);				
 				String strPermit = findPermit(paramRedux[0]);
 				
 				for (Diretorio d: target.getMapDir().values())
@@ -425,8 +306,8 @@ public class MyKernel implements Kernel {
 					
 			} else result = "chmod: Diretório "+parameters+" não existe. (Nada foi modificado)";
 		} else {
-			if (aux.getMapFiles().containsKey(caminho[i])) {
-				Arquivo target = aux.getMapFiles().get(caminho[i]);				
+			if (aux.getMapFiles().containsKey(caminho[caminho.length-1])) {
+				Arquivo target = aux.getMapFiles().get(caminho[caminho.length-1]);				
 				String strPermit = findPermit(paramRedux[0]);
 				target.setPermissao("-"+strPermit);
 			} else result = "chmod: Arquivo "+parameters+" não existe. (Nada foi modificado)";
@@ -442,42 +323,15 @@ public class MyKernel implements Kernel {
 
         //inicio da implementacao do aluno
         this.vetComandos.add("mv "+parameters);
-        Diretorio aux1, aux2;
 		String[] paramSplit = parameters.split(" ");
-		
-		int i = 1;
-		if (paramSplit[0].startsWith("../")) aux1 = this.atual.getPai();
-		else if (paramSplit[0].startsWith("./")) aux1 = this.atual;
-		else {
-			if (!paramSplit[0].startsWith("/")) i = 0;
-			aux1 = this.raiz;
-		}
-		
 		String[] caminho = paramSplit[0].split("/");
 		String[] alvo = paramSplit[1].split("/");
-		for (; i<(caminho.length-1); i++) {
-			if (aux1.getMapDir().containsKey(caminho[i])) {
-				aux1 = aux1.getMapDir().get(caminho[i]);
-			} else if (caminho[i].equals("..")) { 
-				aux1 = aux1.getPai();
-			} else if (!caminho[i].equals(".")) return "mv: Arquivo/Diretório não existe.";
-		}		
-
-		i = 1;
 		
-		if (paramSplit[1].startsWith("../")) aux2 = this.atual.getPai();
-		else if (paramSplit[1].startsWith("./")) aux2 = this.atual;
-		else {
-			if (!paramSplit[1].startsWith("/")) i = 0;
-			aux2 = this.raiz;
-		}
-		for (; i<(alvo.length-1); i++) {
-			if (aux2.getMapDir().containsKey(alvo[i])) {
-				aux2 = aux2.getMapDir().get(alvo[i]);
-			} else if (alvo[i].equals("..")) { 
-				aux2 = aux2.getPai();
-			} else if (!alvo[i].equals(".")) return "mv: Arquivo/Diretório não existe.";
-		}
+		Diretorio aux1 = encontrar(paramSplit[0]);
+		if (aux1 == null) return "mv: Arquivo/Diretório não existe.";
+
+		Diretorio aux2 = encontrar(paramSplit[1]);
+		if (aux2 == null) return "mv: Arquivo/Diretório não existe.";
 			
 		// Pastas  iguais, renomear
 		if (aux1 == aux2) {
@@ -522,47 +376,17 @@ public class MyKernel implements Kernel {
         	parameters = parameters.substring(3);
         }
         
-        Diretorio aux1, aux2;
 		String[] paramSplit = parameters.split(" ");
-		
-		int i = 1;
-		if (paramSplit[0].startsWith("../")) aux1 = this.atual.getPai();
-		else if (paramSplit[0].startsWith("./")) aux1 = this.atual;
-		else {
-			if (!paramSplit[0].startsWith("/")) i = 0;
-			aux1 = this.raiz;
-		}
-		
 		String[] caminho = paramSplit[0].split("/");
 		String[] alvo = paramSplit[1].split("/");
-		for (; i<(caminho.length-1); i++) {
-			if (aux1.getMapDir().containsKey(caminho[i])) {
-				aux1 = aux1.getMapDir().get(caminho[i]);
-			} else if (caminho[i].equals("..")) { 
-				aux1 = aux1.getPai();
-			} else if (!caminho[i].equals(".")) return "cp: Arquivo/Diretório não existe.";
-		}		
 
-		int j;
-		if (parameters.endsWith("/")) j=0;
-		else j=1;
-				
-		i = 1;
+
+        Diretorio aux1 = encontrar(paramSplit[0]);
+        if (aux1 == null) return "cp: Diretório não encontrado. (Nada foi copiado)";
+        
+        Diretorio aux2 = encontrar(paramSplit[1]);
+        if (aux2 == null) return "cp: Diretório não encontrado. (Nada foi copiado)";
 		
-		if (paramSplit[1].startsWith("../")) aux2 = this.atual.getPai();
-		else if (paramSplit[1].startsWith("./")) aux2 = this.atual;
-		else {
-			if (!paramSplit[1].startsWith("/")) i = 0;
-			aux2 = this.raiz;
-		}
-		for (; i<(alvo.length-j); i++) {
-			if (aux2.getMapDir().containsKey(alvo[i])) {
-				aux2 = aux2.getMapDir().get(alvo[i]);
-			} else if (alvo[i].equals("..")) { 
-				aux2 = aux2.getPai();
-			} else if (!alvo[i].equals(".")) return "cp: Arquivo/Diretório não existe.";
-		}
-			
 		// Copiar sem renomear
 		if (paramSplit[1].endsWith("/")) {
 			if (isDir) {
@@ -660,6 +484,30 @@ public class MyKernel implements Kernel {
           
     
     // FUNÇÕES UTITLITARIAS
+    private Diretorio encontrar(String parameters) {
+    	Diretorio aux;
+    	int i = 1;
+    	if (parameters.startsWith("../")) {
+        	aux = this.atual.getPai();
+        } else if (parameters.startsWith("./")) {
+        	aux = this.atual;
+        } else {
+			if (!parameters.startsWith("/")) i = 0;
+			aux = this.raiz;
+		}
+        
+        String[] caminho = parameters.split("/");
+		for (; i<caminho.length; i++) {
+			if (aux.getMapDir().containsKey(caminho[i])) {
+				aux = aux.getMapDir().get(caminho[i]);
+			} else if (caminho[i].equals("..")) {					
+				aux = aux.getPai();
+			} else if (!caminho[i].equals(".")) return null;
+		}
+		
+		return aux;
+    }
+    
     private String executar(String linha) {
     	String[] info = linha.split(" ",2);
     	switch (info[0]) {
