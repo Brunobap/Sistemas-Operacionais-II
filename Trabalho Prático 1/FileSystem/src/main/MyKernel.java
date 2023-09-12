@@ -43,56 +43,39 @@ public class MyKernel implements Kernel {
 
         //inicio da implementacao do aluno
         this.vetComandos.add("ls "+parameters);
-        if (parameters.equals("")) {
-        	for (Diretorio d : this.atual.getMapDir().values())
-        		result += d.getNome()+" ";
-        	for (Arquivo a : this.atual.getMapFiles().values())
-        		result += a.getNome()+" ";
-        } else if (parameters.equals("-l")) {
-        	for (Diretorio d : this.atual.getMapDir().values())
+        boolean flgDetail = false;
+        
+        if (parameters.startsWith("-l")) {
+        	flgDetail = true;
+        	parameters = parameters.substring(2);
+        } else if (parameters.endsWith("-l")) {
+        	flgDetail = true;
+        	parameters = parameters.substring(0);
+        }
+        
+        Diretorio aux = encontrar(parameters);
+        
+        if (flgDetail) {
+        	for (Diretorio d : aux.getMapDir().values())
         		result += 
         			d.getPermissao()+" "+
         			checkMonth(d.getCriacao().getMonth()+1)+" "+
         			(d.getCriacao().getDate()+" ")+
         			(d.getCriacao().getHours()+":"+d.getCriacao().getMinutes())+" "+
         			d.getNome()+"\n";
-        	for (Arquivo a : this.atual.getMapFiles().values())
+        	for (Arquivo a : aux.getMapFiles().values())
         		result += 
         			a.getPermissao()+" "+
         			checkMonth(a.getCriacao().getMonth()+1)+" "+
         			(a.getCriacao().getDate()+" ")+
         			(a.getCriacao().getHours()+":"+a.getCriacao().getMinutes())+" "+
         			a.getNome()+"\n";
-        	
-        } else {        	
-        	String paramRedux = parameters;
-        	if (parameters.startsWith("-l ")) paramRedux = parameters.substring(3,parameters.length());
-
-        	Diretorio aux = this.encontrar(paramRedux);
-        	if (aux == null) return "ls: Diretório não foi encontrado.";
-        	
-    		if (parameters.startsWith("-l ")) {
-	    		for (Diretorio d : aux.getMapDir().values())
-	        		result += 
-	        			d.getPermissao()+" "+
-	        			checkMonth(d.getCriacao().getMonth()+1)+" "+
-	        			(d.getCriacao().getDate()+" ")+
-	        			(d.getCriacao().getHours()+":"+d.getCriacao().getMinutes())+" "+
-	        			d.getNome()+"\n";
-	        	for (Arquivo a : aux.getMapFiles().values())
-	        		result += 
-	    				a.getPermissao()+" "+
-	    				checkMonth(a.getCriacao().getMonth()+1)+" "+
-	    				(a.getCriacao().getDate()+" ")+
-	    				(a.getCriacao().getHours()+":"+a.getCriacao().getMinutes())+" "+
-	    				a.getNome()+"\n";
-    		} else {
-    			for (Diretorio d : aux.getMapDir().values())
-	        		result += d.getNome()+" ";
-	        	for (Arquivo a : aux.getMapFiles().values())
-	        		result += a.getNome()+" ";
-    		}
-        }
+        } else {
+        	for (Diretorio d : aux.getMapDir().values())
+        		result += d.getNome()+" ";
+        	for (Arquivo a : aux.getMapFiles().values())
+        		result += a.getNome()+" ";
+        } 
         //fim da implementacao do aluno
         return result;
     }
