@@ -5,22 +5,37 @@ import java.util.HashMap;
 
 public class Item {
 	
+	private int endereco;
+	
+	private int estado;
 	private String nome;
-	private Diretorio pai;
+	private int pai;
 	private Date criacao;
-	private String permissao;
+	private int permissao;
 	private String caminho;
 	
+	public int getEndereco() {
+		return endereco;
+	}
+	public void setEndereco(int endereco) {
+		this.endereco = endereco;
+	}
+	public int getEstado() {
+		return estado;
+	}
+	public void setEstado(int estado) {
+		this.estado = estado;
+	}
 	public String getNome() {
 		return nome;
 	}
 	public void setNome(String nome) {
 		this.nome = nome;
 	}
-	public Diretorio getPai() {
+	public int getPai() {
 		return pai;
 	}
-	public void setPai(Diretorio pai) {
+	public void setPai(int pai) {
 		this.pai = pai;
 	}	
 	public Date getCriacao() {
@@ -29,10 +44,10 @@ public class Item {
 	public void setCriacao(Date criacao) {
 		this.criacao = criacao;
 	}	
-	public String getPermissao() {
+	public int getPermissao() {
 		return permissao;
 	}
-	public void setPermissao(String permissao) {
+	public void setPermissao(int permissao) {
 		this.permissao = permissao;
 	}	
 	public String getCaminho() {
@@ -42,9 +57,9 @@ public class Item {
 		this.caminho = caminho;
 	}	
 		
-	public Item(String nome, Diretorio pai) {
+	public Item(String nome, int pai) {
 		this.nome = nome;
 		this.criacao = new Date();
-		if (pai != null) this.pai = pai;
+		this.pai = pai;
 	}
 }
