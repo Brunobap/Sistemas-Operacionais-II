@@ -22,7 +22,7 @@ public class Diretorio extends Item {
 		this.mapFiles = mapFiles;
 	}
 	
-	public Diretorio copiar(int pai) {
+	public Diretorio copiar(Diretorio pai) {
 		Diretorio novo = new Diretorio(pai,this);
 		
 		for (Arquivo a : this.getMapFiles().values()) {
@@ -30,7 +30,7 @@ public class Diretorio extends Item {
 			novo.getMapFiles().put(addF.getNome(), addF);
 		}
 		for (Diretorio d : this.getMapDir().values()) {
-			Diretorio addD = d.copiar(novo.getEndereco());
+			Diretorio addD = d.copiar(novo);
 			novo.getMapDir().put(addD.getNome(), addD);
 		}
 		
@@ -38,18 +38,18 @@ public class Diretorio extends Item {
 	}
 	
 	// ctor pras outras pastas
-	public Diretorio (int pai, String nome) {
+	public Diretorio (Diretorio pai, String nome) {
 		super(nome, pai);
-		this.setPai(pai);
+		if (this.getPai() == null) this.setPai(this);
 		this.setCriacao(new Date());
-		this.setPermissao(777);
+		this.setPermissao("drwxrwxrwx");
 		this.mapDir = new HashMap<String, Diretorio>();
 		this.mapFiles = new HashMap<String, Arquivo>();
 	}
 	
-	public Diretorio (int pai, Diretorio molde) {
+	public Diretorio (Diretorio pai, Diretorio molde) {
 		super(molde.getNome(), pai);
-		this.setPai(this.getEndereco());
+		if (this.getPai() == null) this.setPai(this);
 		this.setCriacao(new Date());
 		this.setPermissao(molde.getPermissao());
 		this.mapDir = new HashMap<String, Diretorio>();
