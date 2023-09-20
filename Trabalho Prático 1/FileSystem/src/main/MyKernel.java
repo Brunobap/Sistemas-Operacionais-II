@@ -47,10 +47,11 @@ public class MyKernel implements Kernel {
         
         if (parameters.startsWith("-l")) {
         	flgDetail = true;
-        	parameters = parameters.substring(2);
+        	if (parameters.startsWith("-l ")) parameters = parameters.substring(3);
+        	else parameters = parameters.substring(2);
         } else if (parameters.endsWith("-l")) {
         	flgDetail = true;
-        	parameters = parameters.substring(0);
+        	parameters = parameters.substring(0,parameters.indexOf("-l")-1);
         }
         
         Diretorio aux = encontrar(parameters);
