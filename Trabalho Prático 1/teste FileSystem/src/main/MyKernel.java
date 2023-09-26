@@ -6,8 +6,10 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import binary.Binario;
 import fileItens.Arquivo;
 import fileItens.Diretorio;
+import hardware.HardDisk;
 /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
@@ -21,17 +23,22 @@ import operatingSystem.Kernel;
  */
 public class MyKernel implements Kernel {
 	
+	// Informações da hd
+	private int tamBloco = 512 * 8;
+	
 	private Diretorio atual;
 	private Diretorio raiz;
 	private ArrayList<String> vetComandos;
+	private HardDisk hd;
 
     public MyKernel() {
-    	this.raiz = new Diretorio(null, "/");
-    	this.raiz.setPai(raiz);
+    	this.raiz = new Diretorio(0, "/");
     	this.atual = this.raiz;
     	this.vetComandos = new ArrayList<String>();
+    	this.hd = new HardDisk(1);
+    	this.hd.inicializarMemoriaSecundaria();
     }
-
+    /*
     public String ls(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -48,7 +55,7 @@ public class MyKernel implements Kernel {
         	else parameters = parameters.substring(2);
         } else if (parameters.endsWith("-l")) {
         	flgDetail = true;
-        	parameters = parameters.substring(0,parameters.indexOf("-l")-1);
+        	parameters = parameters.substring(0,parameters.indexOf(" -l"));
         }
         
         Diretorio aux = encontrar(parameters);
@@ -76,7 +83,7 @@ public class MyKernel implements Kernel {
         } 
         //fim da implementacao do aluno
         return result;
-    }
+    }*/
     public String mkdir(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -89,7 +96,7 @@ public class MyKernel implements Kernel {
     	else {
     		Diretorio aux;
     		int i = 1;
-    		if (parameters.startsWith("../")) aux = this.atual.getPai();
+    		if (parameters.startsWith("../")) aux = montarDir(this.atual.getPai());
     		else if (parameters.startsWith("./")) aux = this.atual;
     		else {
     			if (!parameters.startsWith("/")) i = 0;
@@ -116,6 +123,7 @@ public class MyKernel implements Kernel {
         
     	return result;
     }
+    /*
     public String cd(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -294,8 +302,8 @@ public class MyKernel implements Kernel {
         	parameters = parameters.substring(3);
         }
 
-        String numPermit = parameters.substring(0, 3);
-        String strPermit = findPermit(numPermit);
+        String strPermit = parameters.substring(0, 3);
+        int numPermit = Integer.parseInt(strPermit);
         parameters = parameters.substring(4);
         
 		String caminho = "";
@@ -312,15 +320,15 @@ public class MyKernel implements Kernel {
 				Diretorio dirAlvo = aux.getMapDir().get(strAlvo);	
 				
 				for (Diretorio d: dirAlvo.getMapDir().values())
-					d.setPermissao("d"+strPermit);
+					d.setPermissao(numPermit);
 				for (Arquivo a: dirAlvo.getMapFiles().values())
-					a.setPermissao("-"+strPermit);
+					a.setPermissao(numPermit);
 					
 			} else result = "chmod: Diretório "+parameters+" não existe. (Nada foi modificado)";
 		} else {
 			if (aux.getMapFiles().containsKey(strAlvo)) {
 				Arquivo target = aux.getMapFiles().get(strAlvo);
-				target.setPermissao("-"+strPermit);
+				target.setPermissao(numPermit);
 			} else result = "chmod: Arquivo "+parameters+" não existe. (Nada foi modificado)";
 		}
         //fim da implementacao do aluno
@@ -469,8 +477,8 @@ public class MyKernel implements Kernel {
         //fim da implementacao do aluno
         return result;
     }
-    
-    // 2 de 13 Concluidas
+    */
+    // Concluídas
     public String dump(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -527,7 +535,7 @@ public class MyKernel implements Kernel {
     	Diretorio aux;
     	int i = 1;
     	if (parameters.startsWith("../")) {
-        	aux = this.atual.getPai();
+        	aux = montarDir(this.atual.getPai());
         } else if (parameters.startsWith("./")) {
         	aux = this.atual;
         } else {
@@ -537,11 +545,34 @@ public class MyKernel implements Kernel {
         
         String[] caminho = parameters.split("/");
 		for (; i<caminho.length; i++) {
-			if (aux.getMapDir().containsKey(caminho[i])) {
-				aux = aux.getMapDir().get(caminho[i]);
-			} else if (caminho[i].equals("..")) {					
-				aux = aux.getPai();
-			} else if (!caminho[i].equals(".")) return null;
+			if (caminho[i].equals("..")) {					
+				aux = montarDir(aux.getPai());
+			} else if (!caminho[i].equals(".")) {
+				int endEscolhido = 0;
+				String strEscolhido = "";
+				for (int endPasta : aux.getMapDir()) {
+					// 1o: Pegar o monte de bits do nome do filho
+					String raw = "";
+					for (int j=0; j<86*8; j++)
+						if (hd.getBitDaPosicao(endPasta+(j+8))) raw += "1";
+						else raw += "0";
+					
+					// 2o: 
+					String nome = "";
+			    	for (int j=0;j<86;j++){
+			    		String pedaco = raw.substring(8*i, (8*i)+8);
+			    		if (!pedaco.equals("00000000"))
+			        		nome += (char)Binario.binaryStringToInt(pedaco);
+			    	}
+			    	
+			    	if (caminho[i].equals(nome)) {
+			    		endEscolhido = endPasta;
+			    		strEscolhido = nome;
+			    		break;			    	
+			    	}
+				}	
+				if (!strEscolhido.equals("")) aux = montarDir(endEscolhido);
+			}
 		}
 		
 		return aux;
@@ -567,22 +598,79 @@ public class MyKernel implements Kernel {
 		}
     }
     
-    private static String checkMonth(int month) {
+    private Diretorio montarDir(int endereco) {
+    	String dirRaw = "";
+    	for (int i=0; i<tamBloco; i++)
+    		if (this.hd.getBitDaPosicao(endereco+i)) dirRaw += "1";
+    		else dirRaw += "0";
+    	
+    	// 1a informação, Estado
+    	int estado = Binario.binaryStringToInt(dirRaw.substring(0, 8));
+    	dirRaw = dirRaw.substring(8);
+    	
+    	// 2a informação, Nome
+    	String nome = "";
+    	for (int i=0;i<86;i++){
+    		String pedaco = dirRaw.substring(8*i, (8*i)+8);
+    		if (!pedaco.equals("00000000"))
+        		nome += (char)Binario.binaryStringToInt(pedaco);
+    		else break;
+    	}
+    	dirRaw = dirRaw.substring(688);
+    	
+    	// 3a informação, Ponteiro Pai
+    	int pai = Binario.binaryStringToInt(dirRaw.substring(0, 80));
+    	dirRaw = dirRaw.substring(80);
+    	
+    	// 4a informação, Data de Criação
+    	String data = "";
+    	for (int i=0; i<12; i++)
+    		data += Binario.binaryStringToInt(dirRaw.substring((8*i)+4, 8*(i+1)));
+    	dirRaw = dirRaw.substring(96);
+    	
+    	// 5a informação, Permissão
+    	int permit = 100*Binario.binaryStringToInt(dirRaw.substring(4,8));
+    	permit += 10*Binario.binaryStringToInt(dirRaw.substring(12,16));
+    	permit += Binario.binaryStringToInt(dirRaw.substring(20));
+    	dirRaw = dirRaw.substring(24);
+    	
+    	// 6a informação, lista de arquivos
+    	ArrayList<Integer> arrayDir = new ArrayList<Integer>();
+    	for (int i=0; i<20; i++) {
+    		String pedaco = dirRaw.substring(8*i, (8*i)+80);
+    		int endNew = Binario.binaryStringToInt(pedaco);
+    		arrayDir.add(endNew);
+    	}
+    	dirRaw = dirRaw.substring(1600);
+    	
+    	// 7a informação, lista de arquivos
+    	ArrayList<Integer> arrayArq = new ArrayList<Integer>();
+    	for (int i=0; i<20; i++) {
+    		String pedaco = dirRaw.substring(8*i, (8*i)+80);
+    		int endNew = Binario.binaryStringToInt(pedaco);
+    		arrayArq.add(endNew);
+    	}
+    	
+    	
+    	return new Diretorio(estado, nome, pai, data, permit, arrayDir, arrayArq);
+    }
+    
+    private static String checkMonth(String month) {
     	switch (month) {
-			case 1:  return "Jan";
-			case 2: return "Feb";
-			case 3: return "Mar";
-			case 4: return "Apr";
-			case 5: return "May";
-			case 6: return "Jun";
-			case 7: return "Jul";
-			case 8: return "Aug";
-			case 9: return "Sep";
-			case 10: return "Oct";
-			case 11: return "Nov";
-			case 12: return "Dec";
+			case "01":  return "Jan";
+			case "02":  return "Feb";
+			case "03":  return "Mar";
+			case "04":  return "Apr";
+			case "05":  return "May";
+			case "06":  return "Jun";
+			case "07":  return "Jul";
+			case "08":  return "Aug";
+			case "09":  return "Sep";
+			case "10": return "Oct";
+			case "11": return "Nov";
+			case "12": return "Dec";
 			
-			default: return "-";
+			default: return "???";
     	}
 	}
     
@@ -606,6 +694,7 @@ public class MyKernel implements Kernel {
         return bin;
     }
     
+    // TODO: "inverter" o sentido da função
     private static String findPermit(String entrada) {
     	int nPerm1, nPerm2, nPerm3;
 		nPerm1 = Integer.parseInt(entrada.charAt(0)+"");
@@ -639,4 +728,51 @@ public class MyKernel implements Kernel {
 		
 		return strPermit;
     }
+
+
+	@Override
+	public String cd(String parameters) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public String rmdir(String parameters) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public String cp(String parameters) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public String mv(String parameters) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public String rm(String parameters) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public String chmod(String parameters) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public String createfile(String parameters) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public String cat(String parameters) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public String info() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
