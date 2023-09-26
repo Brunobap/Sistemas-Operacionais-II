@@ -105,7 +105,24 @@ public class MyKernel implements Kernel {
     		    		
     		String[] caminho = parameters.split("/");
     		if (caminho[caminho.length-1].contains(".") || caminho[caminho.length-1].contains(" ")) return "mkdir: Nome de diretório inválido. (Nada foi criado)";
+    		
+    		// Buscar e criar as pastas
     		for (; i<caminho.length; i++) {
+    			Diretorio temp = aux;
+    			for (int a : aux.getMapDir()) {
+    				String nome = this.binArrayToString(a+8, 86);
+    				if (nome.equals(caminho[i])) {
+    					aux = montarDir(a);
+    					break;
+    				}
+    			}
+    			// Não achou a pasta, criar uma nova
+    			if (temp != aux) {
+    				int newEnd = this.findNextSpace();
+    				if (newEnd<0) return "mkdir: Espaco de HD insuficiente. (Não foi criado o diretório '"+caminho[i]+"', consequentes)";
+    				Diretorio newDir = new Diretorio(aux.getEndereco(), caminho[i]);
+    			}
+    			
     			if (aux.getMapDir().containsKey(caminho[i])) {
     				aux = aux.getMapDir().get(caminho[i]);
     				result = "mkdir: "+parameters+": Diretorio ja existe (Nenhum diretorio foi criado)";
@@ -598,6 +615,7 @@ public class MyKernel implements Kernel {
 		}
     }
     
+    // Procurar informações na HD e montar estrutras
     private Diretorio montarDir(int endereco) {
     	String dirRaw = "";
     	for (int i=0; i<tamBloco; i++)
@@ -655,6 +673,26 @@ public class MyKernel implements Kernel {
     	return new Diretorio(estado, nome, pai, data, permit, arrayDir, arrayArq);
     }
     
+    // Receber estruturas prontas e escrever no HD
+    private static boolean[] desmontarDir(Diretorio dir) {
+    	boolean[] arrayBits = new boolean[512*8];
+    	
+    	String strBin = "";
+    	dir.getEstado().
+    	
+    	return arrayBits;
+    }
+    
+    // Encontrar a próxima posição livre na hd
+    private int findNextSpace() {
+    	int saida = -1;
+    	
+    	for (int i=0; i<this.hd.getNumBits()/this.tamBloco; i++)
+    		if (!(this.hd.getBitDaPosicao(i+6) || this.hd.getBitDaPosicao(i+7))) return i;
+    	
+    	return saida;
+    }
+    
     private static String checkMonth(String month) {
     	switch (month) {
 			case "01":  return "Jan";
@@ -692,6 +730,22 @@ public class MyKernel implements Kernel {
             bin[size - j - 1] = temp;
         }
         return bin;
+    }
+    
+    private String binArrayToString(int end, int tamanho) {
+    	String saida = "";
+    	
+    	String strBin = "";
+    	for (int i=0; i<tamanho; i++) {
+    		for (int j=0; j<8; j++) {
+    			if (this.hd.getBitDaPosicao(end+8*i+j)) strBin += '1';
+    			else strBin += '0';
+    		}
+    		saida += (char) Binario.binaryStringToInt(strBin);
+    		if (strBin.equals("00000000")) break;
+    	}
+    	
+    	return saida;
     }
     
     // TODO: "inverter" o sentido da função
