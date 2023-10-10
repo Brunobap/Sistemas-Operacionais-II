@@ -676,9 +676,45 @@ public class MyKernel implements Kernel {
     // Receber estruturas prontas e escrever no HD
     private static boolean[] desmontarDir(Diretorio dir) {
     	boolean[] arrayBits = new boolean[512*8];
+    	    	
+    	// 1a parte: estado (fixo, estado sempre é 1 para dir's ativos)
+    	String strBin = Binario.intToBinaryString(dir.getEstado(), 8);
     	
-    	String strBin = "";
-    	dir.getEstado().
+    	// 2a parte: nome da pasta
+    	String aux = dir.getNome();
+    	for (int i=0; i<86; i++) 
+    		if (i >= aux.length()) strBin += "00000000";
+    		else strBin += Binario.intToBinaryString((int) aux.charAt(i), 8);
+    	
+    	// 3a parte: ponteiro pai
+    	strBin += Binario.intToBinaryString(dir.getPai(), 80);
+    	
+    	// 3a parte: data de criação
+    	aux = dir.getCriacao();
+    	for (char c : aux.toCharArray()) 
+    		strBin += Binario.intToBinaryString((int) c, 8);
+    	
+    	// 4a parte: permissão
+    	aux = String.valueOf(dir.getPermissao());
+    	for (int i=0; i<3; i++) {
+    		int a = Integer.parseInt(aux.substring(i, i+1));
+    		strBin += Binario.intToBinaryString(a, 8);
+    	}
+    	
+    	// 5a parte: pastas filhas
+    	for (int i=0; i<10; i++) 
+    		if (i >= dir.getMapDir().size()) strBin += "00000000";
+    		else strBin += Binario.intToBinaryString(dir.getMapDir().get(i), 8);    	
+
+    	// 6a parte: arquivos na pasta
+    	for (int i=0; i<10; i++) 
+    		if (i >= dir.getMapFiles().size()) strBin += "00000000";
+    		else strBin += Binario.intToBinaryString(dir.getMapFiles().get(i), 8);
+    	
+    	// Final: escrever tudo em binário
+    	for (int i=0; i<512*8; i++)
+    		if (strBin.charAt(i) == '0') arrayBits[i] = false;
+    		else arrayBits[i] = true;
     	
     	return arrayBits;
     }
