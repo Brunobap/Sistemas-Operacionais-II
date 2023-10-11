@@ -42,7 +42,8 @@ public class Diretorio extends Item {
 	public Diretorio (int pai, String nome) {
 		super(nome, pai);
 		this.setPai(pai);
-		//this.setCriacao(new Date());
+		this.setCriacao("abcdABcdABcd");
+		this.setEstado(1);
 		this.setPermissao(777);
 		this.mapDir = new ArrayList<Integer>();
 		this.mapFiles = new ArrayList<Integer>();

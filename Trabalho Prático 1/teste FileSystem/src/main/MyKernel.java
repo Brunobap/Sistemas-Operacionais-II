@@ -33,12 +33,13 @@ public class MyKernel implements Kernel {
 
     public MyKernel() {
     	this.raiz = new Diretorio(0, "/");
+    	this.hd = new HardDisk(1);
     	this.atual = this.raiz;
     	this.vetComandos = new ArrayList<String>();
-    	this.hd = new HardDisk(1);
     	this.hd.inicializarMemoriaSecundaria();
+    	desmontarDir(this.raiz);
     }
-    /*
+    
     public String ls(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -58,32 +59,38 @@ public class MyKernel implements Kernel {
         	parameters = parameters.substring(0,parameters.indexOf(" -l"));
         }
         
-        Diretorio aux = encontrar(parameters);
+        Diretorio aux = findDir(parameters);
         
         if (flgDetail) {
-        	for (Diretorio d : aux.getMapDir().values())
+        	Diretorio d;
+        	for (int end : aux.getMapDir()) {
+        		d = montarDir(end);
         		result += 
         			d.getPermissao()+" "+
-        			checkMonth(d.getCriacao().getMonth()+1)+" "+
-        			(d.getCriacao().getDate()+" ")+
-        			(d.getCriacao().getHours()+":"+d.getCriacao().getMinutes())+" "+
+        			d.getCriacao()+" "+
         			d.getNome()+"\n";
-        	for (Arquivo a : aux.getMapFiles().values())
+        	}
+        	/*Arquivo a;
+        	for (int end : aux.getMapFiles()) {
         		result += 
-        			a.getPermissao()+" "+
-        			checkMonth(a.getCriacao().getMonth()+1)+" "+
-        			(a.getCriacao().getDate()+" ")+
-        			(a.getCriacao().getHours()+":"+a.getCriacao().getMinutes())+" "+
-        			a.getNome()+"\n";
+    			d.getPermissao()+" "+
+    			d.getCriacao()+" "+
+    			d.getNome()+"\n";
+        	}*/
         } else {
-        	for (Diretorio d : aux.getMapDir().values())
-        		result += d.getNome()+" ";
-        	for (Arquivo a : aux.getMapFiles().values())
+        	Diretorio d;
+        	for (int end : aux.getMapDir()) {
+        		d = montarDir(end);
+        		result += d.getNome()+" ";        		
+        	}
+        	/*Arquivo a;
+        	for (int end : aux.getMapFiles()) {
         		result += a.getNome()+" ";
+        	}*/
         } 
         //fim da implementacao do aluno
         return result;
-    }*/
+    }
     public String mkdir(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -108,32 +115,30 @@ public class MyKernel implements Kernel {
     		
     		// Buscar e criar as pastas
     		for (; i<caminho.length; i++) {
+    			if (caminho[i].length() > 86) return "mkdir: Nome de diretório inválido, tamanho exagerado.";
     			Diretorio temp = aux;
     			for (int a : aux.getMapDir()) {
-    				String nome = this.binArrayToString(a+8, 86);
+    				String nome = this.findNome(a);
     				if (nome.equals(caminho[i])) {
     					aux = montarDir(a);
     					break;
     				}
     			}
     			// Não achou a pasta, criar uma nova
-    			if (temp != aux) {
+    			if (temp == aux) {
     				int newEnd = this.findNextSpace();
-    				if (newEnd<0) return "mkdir: Espaco de HD insuficiente. (Não foi criado o diretório '"+caminho[i]+"', consequentes)";
+    				if (newEnd<0) return "mkdir: Espaco de HD insuficiente. (Não foi criado o diretório '"+caminho[i]+"', e consequentes)";
     				Diretorio newDir = new Diretorio(aux.getEndereco(), caminho[i]);
+    				newDir.setEndereco(newEnd);
+    				aux.getMapDir().add(newEnd);
+    				desmontarDir(aux);
+    				desmontarDir(newDir);
+    				aux = newDir;
     			}
     			
-    			if (aux.getMapDir().containsKey(caminho[i])) {
-    				aux = aux.getMapDir().get(caminho[i]);
-    				result = "mkdir: "+parameters+": Diretorio ja existe (Nenhum diretorio foi criado)";
-    			} else if (caminho[i].equals("..")) {					
-					aux = aux.getPai();
-				} else if (!caminho[i].equals(".")) {
-    				Diretorio novo = new Diretorio(aux, caminho[i]);
-    				aux.getMapDir().put(caminho[i], novo);
-    				aux = novo;
-    				result = "";
-    			}
+    			if (aux.getMapDir().contains(aux.getEndereco())) result = "mkdir: "+parameters+": Diretorio ja existe (Nenhum diretorio foi criado)";
+    			else if (caminho[i].equals("..")) aux = montarDir(aux.getPai());
+				else if (!caminho[i].equals(".")) result = "";
     		}    		
     	}        	
         //fim da implementacao do aluno
@@ -545,8 +550,9 @@ public class MyKernel implements Kernel {
     }
           
     
-    // FUNÇÕES UTITLITARIAS
-    private Diretorio encontrar(String parameters) {
+    // FUNÇÕES UTITLITARIAS:
+    // Encontrar uma pasta na HD, e devolve-la montada
+    private Diretorio findDir(String parameters) {
     	if (parameters.equals("")) return this.atual;
     	
     	Diretorio aux;
@@ -574,7 +580,7 @@ public class MyKernel implements Kernel {
 						if (hd.getBitDaPosicao(endPasta+(j+8))) raw += "1";
 						else raw += "0";
 					
-					// 2o: 
+					// 2o: converter o bruto em String
 					String nome = "";
 			    	for (int j=0;j<86;j++){
 			    		String pedaco = raw.substring(8*i, (8*i)+8);
@@ -582,6 +588,7 @@ public class MyKernel implements Kernel {
 			        		nome += (char)Binario.binaryStringToInt(pedaco);
 			    	}
 			    	
+			    	// 3o: verificar se o nome bate
 			    	if (caminho[i].equals(nome)) {
 			    		endEscolhido = endPasta;
 			    		strEscolhido = nome;
@@ -594,7 +601,25 @@ public class MyKernel implements Kernel {
 		
 		return aux;
     }
+    // Encontrar o nome do item no endereço especificado
+    private String findNome(int end) {
+    	
+    	String raw = "";
+    	for (int i=0; i<86*8; i++)
+    		if (this.hd.getBitDaPosicao(end+(8+i))) raw += '1';
+    		else raw += '0';
+
+    	String nome = "";
+    	for (int i=0; i<86; i++){
+    		int c = Binario.binaryStringToInt(raw.substring(i, i+8));
+    		nome += (char) c;
+    		if (c == 0) break;
+    	}
+    	
+    	return nome;
+    }
     
+    // Mecanismo da execução do batch
     private String executar(String linha) {
     	String[] info = linha.split(" ",2);
     	switch (info[0]) {
@@ -672,11 +697,8 @@ public class MyKernel implements Kernel {
     	
     	return new Diretorio(estado, nome, pai, data, permit, arrayDir, arrayArq);
     }
-    
-    // Receber estruturas prontas e escrever no HD
-    private static boolean[] desmontarDir(Diretorio dir) {
-    	boolean[] arrayBits = new boolean[512*8];
-    	    	
+    // Receber pastas prontas e escrever no HD
+    private void desmontarDir(Diretorio dir) {    	    	
     	// 1a parte: estado (fixo, estado sempre é 1 para dir's ativos)
     	String strBin = Binario.intToBinaryString(dir.getEstado(), 8);
     	
@@ -702,51 +724,31 @@ public class MyKernel implements Kernel {
     	}
     	
     	// 5a parte: pastas filhas
-    	for (int i=0; i<10; i++) 
-    		if (i >= dir.getMapDir().size()) strBin += "00000000";
-    		else strBin += Binario.intToBinaryString(dir.getMapDir().get(i), 8);    	
+    	for (int i=0; i<20; i++) 
+    		if (i >= dir.getMapDir().size()) strBin += Binario.intToBinaryString(0, 80);
+    		else strBin += Binario.intToBinaryString(dir.getMapDir().get(i), 80);    	
 
     	// 6a parte: arquivos na pasta
-    	for (int i=0; i<10; i++) 
-    		if (i >= dir.getMapFiles().size()) strBin += "00000000";
-    		else strBin += Binario.intToBinaryString(dir.getMapFiles().get(i), 8);
+    	for (int i=0; i<20; i++) 
+    		if (i >= dir.getMapFiles().size()) strBin += Binario.intToBinaryString(0, 80);
+    		else strBin += Binario.intToBinaryString(dir.getMapFiles().get(i), 80);
     	
-    	// Final: escrever tudo em binário
-    	for (int i=0; i<512*8; i++)
-    		if (strBin.charAt(i) == '0') arrayBits[i] = false;
-    		else arrayBits[i] = true;
-    	
-    	return arrayBits;
+    	// Final: escrever tudo na HD
+    	for (int i=0; i<512*8; i++) {
+    		boolean b = (strBin.charAt(i) == '1');
+    		this.hd.setBitDaPosicao(b, dir.getEndereco()+i);    
+    	}
     }
     
     // Encontrar a próxima posição livre na hd
     private int findNextSpace() {
     	int saida = -1;
     	
-    	for (int i=0; i<this.hd.getNumBits()/this.tamBloco; i++)
+    	for (int i=0; i<this.hd.getNumBits(); i+=512*8)
     		if (!(this.hd.getBitDaPosicao(i+6) || this.hd.getBitDaPosicao(i+7))) return i;
     	
     	return saida;
     }
-    
-    private static String checkMonth(String month) {
-    	switch (month) {
-			case "01":  return "Jan";
-			case "02":  return "Feb";
-			case "03":  return "Mar";
-			case "04":  return "Apr";
-			case "05":  return "May";
-			case "06":  return "Jun";
-			case "07":  return "Jul";
-			case "08":  return "Aug";
-			case "09":  return "Sep";
-			case "10": return "Oct";
-			case "11": return "Nov";
-			case "12": return "Dec";
-			
-			default: return "???";
-    	}
-	}
     
     private static int[] intToBinary(int value, int size) {
         if (value > Math.pow(2, size) - 1) {
@@ -818,7 +820,6 @@ public class MyKernel implements Kernel {
 		
 		return strPermit;
     }
-
 
 	@Override
 	public String cd(String parameters) {
