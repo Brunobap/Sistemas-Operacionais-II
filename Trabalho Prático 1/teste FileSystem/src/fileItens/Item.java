@@ -12,7 +12,6 @@ public class Item {
 	private int pai;
 	private String criacao;
 	private int permissao;
-	private String caminho;
 	
 	public int getEndereco() {
 		return endereco;
@@ -50,12 +49,7 @@ public class Item {
 	public void setPermissao(int permissao) {
 		this.permissao = permissao;
 	}	
-	public String getCaminho() {
-		return caminho;
-	}
-	public void setCaminho(String caminho) {
-		this.caminho = caminho;
-	}	
+	
 		
 	public Item(String nome, int pai) {
 		this.nome = nome;
@@ -69,8 +63,9 @@ public class Item {
 		this.pai = pai;
 	}
 	
-	public Item(int estado, String nome, int pai, String data, int permit) {
+	public Item(int estado, int endereco, String nome, int pai, String data, int permit) {
 		this.estado = estado;
+		this.endereco = endereco;
 		this.nome = nome;
 		this.pai = pai;
 		this.criacao = data;

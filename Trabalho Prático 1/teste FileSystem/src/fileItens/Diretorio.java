@@ -59,8 +59,8 @@ public class Diretorio extends Item {
 	}
 	
 	// ctor para pastas já salvas
-	public Diretorio (int estado, String nome, int pai, String data, int permit, ArrayList<Integer> listDir, ArrayList<Integer> listArq) {
-		super(estado, nome, pai, data, permit);
+	public Diretorio (int estado, int endereco, String nome, int pai, String data, int permit, ArrayList<Integer> listDir, ArrayList<Integer> listArq) {
+		super(estado, endereco, nome, pai, data, permit);
 		this.mapDir = listDir;
 		this.mapFiles = listArq;
 	}
