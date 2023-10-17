@@ -53,13 +53,7 @@ public class Item {
 		
 	public Item(String nome, int pai) {
 		this.nome = nome;
-		Date agora = new Date();
-		this.criacao = 
-				agora.getYear()+
-				(agora.getMonth()+1)+
-				(agora.getDate()+1)+
-				(agora.getHours()+1)+
-				(agora.getMinutes()+1)+"";
+		this.criacao = "123412341234";
 		this.pai = pai;
 	}
 	

@@ -39,28 +39,7 @@ public class MyKernel implements Kernel {
     	desmontarDir(raiz);
     }
     
-    /*public String cd(String parameters) {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        String currentDir = "";
-        System.out.println("Chamada de Sistema: cd");
-        System.out.println("\tParametros: " + parameters);
-
-        //inicio da implementacao do aluno
-        this.vetComandos.add("cd "+parameters);
-        //indique o diretório atual. Por exemplo... /
-        currentDir = operatingSystem.fileSystem.FileSytemSimulator.currentDir;
-        
-        Diretorio aux = encontrar(parameters);
-        if (aux == null) return "cd: Diretório não foi encontrado.";
-		this.atual = aux;
-
-        //setando parte gráfica do diretorio atual
-        operatingSystem.fileSystem.FileSytemSimulator.currentDir = currentDir;
-
-        //fim da implementacao do aluno
-        return result;
-    }
+    
     public String createfile(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -77,24 +56,29 @@ public class MyKernel implements Kernel {
         	caminho = strCam.substring(0, strCam.lastIndexOf("/"));
         	nome = strCam.substring(strCam.lastIndexOf("/")+1);
         } else nome = caminho;
-        Diretorio aux = encontrar(caminho);
+        Diretorio aux = findDir(caminho);
         if (aux == null) return "createfile: Diretório não encontrado. (Nenhum arquivo criado)";
                       
         String texto = parameters.substring(parameters.indexOf(" ")+1);
         
-		if (aux.getMapFiles().containsKey(nome)) 
-			result = "createfile: Arquivo já existe. Não foi posível criá-lo.";
-		else {
-			if ((nome.contains(" ") || nome.contains("/")) && !nome.contains(".")) return "createfile: Nome de arquivo inválido. (Nada foi criado)";
-			String conteudo = texto.replaceAll("\\\\n", "\n");
-			Arquivo novo = new Arquivo(aux, nome, conteudo);
-			
-			aux.getMapFiles().put(nome, novo);
-		}
-        
+        for (int end : aux.getMapFiles()) if (findNome(end).equals(nome)) return "createfile: Arquivo já existe. Não foi posível criá-lo.";
+		if ((nome.contains(" ") || nome.contains("/")) && !nome.contains(".") || nome.length()>86) return "createfile: Nome de arquivo inválido. (Nada foi criado)";
+		
+		String conteudo = texto.replaceAll("\\\\n", "\n");
+		if (conteudo.length()>400) return "createfile: Conteúdo excessivo, limite de 400 caracteres. (Nada foi criado)";
+		
+		int newEnd = findNextSpace();
+		if (newEnd<0) return "createfile: Sem espaço suficiente para criar arquivo. (Nada foi criado)";
+		Arquivo novo = new Arquivo(aux.getEndereco(), nome, conteudo);
+		novo.setEndereco(newEnd);
+		
+		aux.getMapFiles().add(novo.getEndereco());
+        desmontarDir(aux);
+        desmontarArq(novo);
         //fim da implementacao do aluno
         return result;
     }
+    /*
     public String cat(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -393,7 +377,7 @@ public class MyKernel implements Kernel {
         return result;
     }
     */
-    // Concluídas
+    // Concluídas 5/13
     public String ls(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -505,6 +489,33 @@ public class MyKernel implements Kernel {
         
     	return result;
     }
+    public String cd(String parameters) {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        String currentDir = "";
+        System.out.println("Chamada de Sistema: cd");
+        System.out.println("\tParametros: " + parameters);
+
+        //inicio da implementacao do aluno
+        this.vetComandos.add("cd "+parameters);
+        //indique o diretório atual. Por exemplo... /
+        currentDir = operatingSystem.fileSystem.FileSytemSimulator.currentDir;
+        
+        if (!(parameters.startsWith("../") || parameters.startsWith("./") || parameters.startsWith("/"))) parameters = "./"+parameters;
+        Diretorio aux = findDir(parameters);
+        if (aux == null) return "cd: Diretório não foi encontrado.";
+		this.atual = aux.getEndereco();
+
+        //setando parte gráfica do diretorio atual	
+		String[] caminho = parameters.split("/");
+		for (String s : caminho)
+			if (s.equals("..")) currentDir = currentDir.substring(0, currentDir.indexOf("/",caminho.length-1)+1);
+			else if (!s.equals(".")) currentDir += s+"/";
+        operatingSystem.fileSystem.FileSytemSimulator.currentDir = currentDir;
+
+        //fim da implementacao do aluno
+        return result;
+    }    
     public String dump(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -792,6 +803,43 @@ public class MyKernel implements Kernel {
     		this.hd.setBitDaPosicao(b, dir.getEndereco()+i);    
     	}
     }
+    private void desmontarArq(Arquivo arq) {    	    	
+    	// 1a parte: estado (fixo, estado sempre é 1 para dir's ativos)
+    	String strBin = Binario.intToBinaryString(arq.getEstado(), 8);
+    	
+    	// 2a parte: nome da pasta
+    	String aux = arq.getNome();
+    	for (int i=0; i<86; i++) 
+    		if (i >= aux.length()) strBin += "00000000";
+    		else strBin += Binario.intToBinaryString((int) aux.charAt(i), 8);
+    	
+    	// 3a parte: ponteiro pai
+    	strBin += Binario.intToBinaryString(arq.getPai(), 80);
+    	
+    	// 3a parte: data de criação
+    	aux = arq.getCriacao();
+    	for (char c : aux.toCharArray()) 
+    		strBin += Binario.intToBinaryString((int) c, 8);
+    	
+    	// 4a parte: permissão
+    	aux = String.valueOf(arq.getPermissao());
+    	for (int i=0; i<3; i++) {
+    		int a = Integer.parseInt(aux.substring(i, i+1));
+    		strBin += Binario.intToBinaryString(a, 8);
+    	}
+    	
+    	// 5a parte: conteúdo
+    	aux = arq.getConteudo();
+    	for (int i=0; i<400; i++) 
+    		if (i >= aux.length()) strBin += "00000000";
+    		else strBin += Binario.intToBinaryString((int) aux.charAt(i), 8);
+    	
+    	// Final: escrever tudo na HD
+    	for (int i=0; i<512*8; i++) {
+    		boolean b = (strBin.charAt(i) == '1');
+    		this.hd.setBitDaPosicao(b, arq.getEndereco()+i);    
+    	}
+    }
     
     // Encontrar a próxima posição livre na hd
     private int findNextSpace() {
@@ -823,23 +871,6 @@ public class MyKernel implements Kernel {
         return bin;
     }
     
-    private String binArrayToString(int end, int tamanho) {
-    	String saida = "";
-    	
-    	String strBin = "";
-    	for (int i=0; i<tamanho; i++) {
-    		for (int j=0; j<8; j++) {
-    			if (this.hd.getBitDaPosicao(end+8*i+j)) strBin += '1';
-    			else strBin += '0';
-    		}
-    		saida += (char) Binario.binaryStringToInt(strBin);
-    		if (strBin.equals("00000000")) break;
-    	}
-    	
-    	return saida;
-    }
-    
-    // TODO: "inverter" o sentido da função
     private static String findPermit(String entrada) {
     	int nPerm1, nPerm2, nPerm3;
 		nPerm1 = Integer.parseInt(entrada.charAt(0)+"");
@@ -875,11 +906,6 @@ public class MyKernel implements Kernel {
     }
 
 	@Override
-	public String cd(String parameters) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
 	public String rmdir(String parameters) {
 		// TODO Auto-generated method stub
 		return null;
@@ -901,11 +927,6 @@ public class MyKernel implements Kernel {
 	}
 	@Override
 	public String chmod(String parameters) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
-	public String createfile(String parameters) {
 		// TODO Auto-generated method stub
 		return null;
 	}
