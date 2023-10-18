@@ -38,117 +38,7 @@ public class MyKernel implements Kernel {
     	this.hd.inicializarMemoriaSecundaria();
     	desmontarDir(raiz);
     }
-    
-    
-    public String createfile(String parameters) {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: createfile");
-        System.out.println("\tParametros: " + parameters);
-
-        //inicio da implementacao do aluno
-        this.vetComandos.add("createfile "+parameters);
-        
-        String strCam = parameters.substring(0,parameters.indexOf(" "));
-        String caminho = "";
-        String nome;
-        if (strCam.contains("/")) {
-        	caminho = strCam.substring(0, strCam.lastIndexOf("/"));
-        	nome = strCam.substring(strCam.lastIndexOf("/")+1);
-        } else nome = caminho;
-        Diretorio aux = findDir(caminho);
-        if (aux == null) return "createfile: Diretório não encontrado. (Nenhum arquivo criado)";
-                      
-        String texto = parameters.substring(parameters.indexOf(" ")+1);
-        
-        for (int end : aux.getMapFiles()) if (findNome(end).equals(nome)) return "createfile: Arquivo já existe. Não foi posível criá-lo.";
-		if ((nome.contains(" ") || nome.contains("/")) && !nome.contains(".") || nome.length()>86) return "createfile: Nome de arquivo inválido. (Nada foi criado)";
-		
-		String conteudo = texto.replaceAll("\\\\n", "\n");
-		if (conteudo.length()>400) return "createfile: Conteúdo excessivo, limite de 400 caracteres. (Nada foi criado)";
-		
-		int newEnd = findNextSpace();
-		if (newEnd<0) return "createfile: Sem espaço suficiente para criar arquivo. (Nada foi criado)";
-		Arquivo novo = new Arquivo(aux.getEndereco(), nome, conteudo);
-		novo.setEndereco(newEnd);
-		
-		aux.getMapFiles().add(novo.getEndereco());
-        desmontarDir(aux);
-        desmontarArq(novo);
-        //fim da implementacao do aluno
-        return result;
-    }
-    /*
-    public String cat(String parameters) {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: cat");
-        System.out.println("\tParametros: " + parameters);
-
-        //inicio da implementacao do aluno
-        this.vetComandos.add("cat "+parameters);
-        String caminho = "";
-        String nome;
-        if (parameters.contains("/")) {
-        	caminho = parameters.substring(0,parameters.lastIndexOf("/"));
-        	nome = parameters.substring(parameters.lastIndexOf("/")+1);
-        } else nome = parameters;
-        
-        Diretorio aux = encontrar(caminho);
-		if (aux == null) return "cat: Diretorio do arquivo não existe. (Nada foi lido)";
-			
-		if (aux.getMapFiles().containsKey(nome)) result = aux.getMapFiles().get(nome).getConteudo();
-		else result = "cat: Arquivo não existe. (Nada foi lido)";
-        //fim da implementacao do aluno
-        return result;
-    }
-    public String info() {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: info");
-        System.out.println("\tParametros: sem parametros");
-
-        this.vetComandos.add("info");
-        //nome do aluno
-        String name = "Bruno Ribeiro Batista";
-        //numero de matricula
-        String registration = "202111020022";
-        //versao do sistema de arquivos
-        String version = "1.0";
-
-        result += "Nome do Aluno:        " + name;
-        result += "\nMatricula do Aluno:   " + registration;
-        result += "\nVersao do Kernel:     " + version;
-
-        return result;
-    }
-    public String rmdir(String parameters) {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: rmdir");
-        System.out.println("\tParametros: " + parameters);
-
-        //inicio da implementacao do aluno
-        this.vetComandos.add("rmdir "+parameters);
-        String caminho = "";
-        String strAlvo;
-        if (parameters.contains("/")) {
-        	caminho = parameters.substring(0,parameters.lastIndexOf("/"));
-        	strAlvo = parameters.substring(parameters.lastIndexOf("/")+1);
-        } else strAlvo = parameters;
-        Diretorio aux = encontrar(caminho);
-		if (aux == null) return "rmdir: Diretório "+parameters+"não existe. (Nada foi removido)";
-		
-		if (aux.getMapDir().containsKey(strAlvo)) {
-			Diretorio dirAlvo = aux.getMapDir().get(strAlvo);
-			if (dirAlvo.getMapDir().isEmpty() && dirAlvo.getMapFiles().isEmpty()) 
-				aux.getMapDir().remove(dirAlvo.getNome());
-			else result = "rmdir: Diretório "+parameters+" possui arquivos e/ou diretórios. (Nada foi removido)";
-		} else result = "rmdir: Diretório "+parameters+" não existe. (Nada foi removido)";
-		
-        //fim da implementacao do aluno
-        return result;
-    }
+  
     public String rm(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -187,6 +77,7 @@ public class MyKernel implements Kernel {
         //fim da implementacao do aluno
         return result;
     }
+    /*
     public String chmod(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -377,61 +268,7 @@ public class MyKernel implements Kernel {
         return result;
     }
     */
-    // Concluídas 5/13
-    public String ls(String parameters) {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: ls");
-        System.out.println("\tParametros: " + parameters);
-
-        //inicio da implementacao do aluno
-        this.vetComandos.add("ls "+parameters);
-        boolean flgDetail = false;
-        
-        if (parameters.startsWith("-l")) {
-        	flgDetail = true;
-        	if (parameters.startsWith("-l ")) parameters = parameters.substring(3);
-        	else parameters = parameters.substring(2);
-        } else if (parameters.endsWith("-l")) {
-        	flgDetail = true;
-        	parameters = parameters.substring(0,parameters.indexOf(" -l"));
-        }
-        
-        Diretorio aux = findDir(parameters);
-        if (aux == null) return "ls: O diretório especificado não existe. (Nada foi mostrado)";
-        
-        if (flgDetail) {
-        	Diretorio d;
-        	for (int end : aux.getMapDir()) {
-        		d = montarDir(end);
-        		result += 
-        			d.getPermissao()+" "+
-        			d.getCriacao()+" "+
-        			d.getNome()+"\n";
-        	}
-        	Arquivo a;
-        	for (int end : aux.getMapFiles()) {
-        		a = montarArq(end);
-        		result += 
-    			a.getPermissao()+" "+
-    			a.getCriacao()+" "+
-    			a.getNome()+"\n";
-        	}
-        } else {
-        	Diretorio d;
-        	for (int end : aux.getMapDir()) {
-        		d = montarDir(end);
-        		result += d.getNome()+" ";        		
-        	}
-        	Arquivo a;
-        	for (int end : aux.getMapFiles()) {
-        		a = montarArq(end);
-        		result += a.getNome()+" ";
-        	}
-        } 
-        //fim da implementacao do aluno
-        return result;
-    }
+    // Concluídas 9/13
     public String mkdir(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -489,6 +326,60 @@ public class MyKernel implements Kernel {
         
     	return result;
     }
+    public String ls(String parameters) {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: ls");
+        System.out.println("\tParametros: " + parameters);
+
+        //inicio da implementacao do aluno
+        this.vetComandos.add("ls "+parameters);
+        boolean flgDetail = false;
+        
+        if (parameters.startsWith("-l")) {
+        	flgDetail = true;
+        	if (parameters.startsWith("-l ")) parameters = parameters.substring(3);
+        	else parameters = parameters.substring(2);
+        } else if (parameters.endsWith("-l")) {
+        	flgDetail = true;
+        	parameters = parameters.substring(0,parameters.indexOf(" -l"));
+        }
+        
+        Diretorio aux = findDir(parameters);
+        if (aux == null) return "ls: O diretório especificado não existe. (Nada foi mostrado)";
+        
+        if (flgDetail) {
+        	Diretorio d;
+        	for (int end : aux.getMapDir()) {
+        		d = montarDir(end);
+        		result += 
+        			d.getPermissao()+" "+
+        			d.getCriacao()+" "+
+        			d.getNome()+"\n";
+        	}
+        	Arquivo a;
+        	for (int end : aux.getMapFiles()) {
+        		a = montarArq(end);
+        		result += 
+    			a.getPermissao()+" "+
+    			a.getCriacao()+" "+
+    			a.getNome()+"\n";
+        	}
+        } else {
+        	Diretorio d;
+        	for (int end : aux.getMapDir()) {
+        		d = montarDir(end);
+        		result += d.getNome()+" ";        		
+        	}
+        	Arquivo a;
+        	for (int end : aux.getMapFiles()) {
+        		a = montarArq(end);
+        		result += a.getNome()+" ";
+        	}
+        } 
+        //fim da implementacao do aluno
+        return result;
+    }
     public String cd(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -516,6 +407,129 @@ public class MyKernel implements Kernel {
         //fim da implementacao do aluno
         return result;
     }    
+    public String createfile(String parameters) {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: createfile");
+        System.out.println("\tParametros: " + parameters);
+
+        //inicio da implementacao do aluno
+        this.vetComandos.add("createfile "+parameters);
+        
+        String strCam = parameters.substring(0,parameters.indexOf(" "));
+        String caminho = "";
+        String nome;
+        if (strCam.contains("/")) {
+        	caminho = strCam.substring(0, strCam.lastIndexOf("/"));
+        	nome = strCam.substring(strCam.lastIndexOf("/")+1);
+        } else nome = strCam;
+        Diretorio aux = findDir(caminho);
+        if (aux == null) return "createfile: Diretório não encontrado. (Nenhum arquivo criado)";
+                      
+        String texto = parameters.substring(parameters.indexOf(" ")+1);
+        
+        for (int end : aux.getMapFiles()) if (findNome(end).equals(nome)) return "createfile: Arquivo já existe. Não foi posível criá-lo.";
+		if ((nome.contains(" ") || nome.contains("/")) && !nome.contains(".") || nome.length()>86) return "createfile: Nome de arquivo inválido. (Nada foi criado)";
+		
+		String conteudo = texto.replaceAll("\\\\n", "\n");
+		if (conteudo.length()>400) return "createfile: Conteúdo excessivo, limite de 400 caracteres. (Nada foi criado)";
+		
+		int newEnd = findNextSpace();
+		if (newEnd<0) return "createfile: Sem espaço suficiente para criar arquivo. (Nada foi criado)";
+		Arquivo novo = new Arquivo(aux.getEndereco(), nome, conteudo);
+		novo.setEndereco(newEnd);
+		
+		aux.getMapFiles().add(novo.getEndereco());
+        desmontarDir(aux);
+        desmontarArq(novo);
+        //fim da implementacao do aluno
+        return result;
+    }
+    public String cat(String parameters) {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: cat");
+        System.out.println("\tParametros: " + parameters);
+
+        //inicio da implementacao do aluno
+        this.vetComandos.add("cat "+parameters);
+        String caminho = "";
+        String nome;
+        if (parameters.contains("/")) {
+        	caminho = parameters.substring(0,parameters.lastIndexOf("/"));
+        	nome = parameters.substring(parameters.lastIndexOf("/")+1);
+        } else {
+        	nome = parameters;
+        	caminho = "";
+        }
+        
+        Diretorio aux = findDir(caminho);
+		if (aux == null) return "cat: Diretorio do arquivo não existe. (Nada foi lido)";
+			
+		Arquivo alvo = null;
+		for (int end : aux.getMapFiles()) {
+			String s = findNome(end);
+			if (s.equals(nome+'\0')) {
+				alvo = montarArq(end);
+				break;
+			}
+		}
+		if (alvo != null) result = alvo.getConteudo();
+		else result = "cat: Arquivo não existe. (Nada foi lido)";
+        //fim da implementacao do aluno
+        return result;
+    }
+    public String rmdir(String parameters) {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: rmdir");
+        System.out.println("\tParametros: " + parameters);
+
+        //inicio da implementacao do aluno
+        this.vetComandos.add("rmdir "+parameters);
+        String caminho = "";
+        String strAlvo;
+        if (parameters.contains("/")) {
+        	caminho = parameters.substring(0,parameters.lastIndexOf("/"));
+        	strAlvo = parameters.substring(parameters.lastIndexOf("/")+1);
+        } else strAlvo = parameters;
+        Diretorio aux = findDir(caminho);
+		if (aux == null) return "rmdir: Diretório "+parameters+"não existe. (Nada foi removido)";
+		
+		Diretorio dirAlvo = null;
+		for (int end : aux.getMapDir()) if (findNome(end).equals(strAlvo+'\0')) dirAlvo = montarDir(end);
+		if (dirAlvo != null) {
+			if (dirAlvo.getMapDir().isEmpty() && dirAlvo.getMapFiles().isEmpty()) {
+				aux.getMapDir().remove(aux.getMapDir().indexOf(dirAlvo.getEndereco()));
+				dirAlvo.setEstado(0);
+				desmontarDir(dirAlvo);
+				desmontarDir(aux);
+			} else result = "rmdir: Diretório "+parameters+" possui arquivos e/ou diretórios. (Nada foi removido)";
+		} else result = "rmdir: Diretório "+parameters+" não existe. (Nada foi removido)";
+		
+        //fim da implementacao do aluno
+        return result;
+    }
+    public String info() {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: info");
+        System.out.println("\tParametros: sem parametros");
+
+        this.vetComandos.add("info");
+        //nome do aluno
+        String name = "Bruno Ribeiro Batista";
+        //numero de matricula
+        String registration = "202111020022";
+        //versao do sistema de arquivos
+        String version = "2.0";
+
+        result += "Nome do Aluno:        " + name;
+        result += "\nMatricula do Aluno:   " + registration;
+        result += "\nVersao do Kernel:     " + version;
+
+        return result;
+    }
     public String dump(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -566,7 +580,9 @@ public class MyKernel implements Kernel {
           
     
     // FUNÇÕES UTITLITARIAS:
-    // Encontrar uma pasta na HD, e devolve-la montada
+    /* 
+     * Encontrar uma pasta na HD, e devolve-la montada
+     */
     private Diretorio findDir(String parameters) {
     	if (parameters.isEmpty() || parameters.equals(" ")) return montarDir(this.atual);
     	
@@ -577,9 +593,12 @@ public class MyKernel implements Kernel {
         	aux = montarDir(aux.getPai());
         } else if (parameters.startsWith("./")) {
         	aux = montarDir(this.atual);
-        } else {
-			if (!parameters.startsWith("/")) i = 0;
+        } else if (!parameters.startsWith("/")) {
+			i = 0;
 			aux = montarDir(0);
+		} else {
+			i = 0;
+			aux = montarDir(this.atual);
 		}
         
         String[] caminho = parameters.split("/");
@@ -618,7 +637,11 @@ public class MyKernel implements Kernel {
 		
 		return aux;
     }
-    // Encontrar o nome do item no endereço especificado
+    
+    /*
+     * Encontra o nome de um item salvo no endereço passado
+     */
+    // Encontrar o nome do diretório/arquivo no endereço especificado
     private String findNome(int end) {
     	
     	String raw = "";
@@ -628,7 +651,7 @@ public class MyKernel implements Kernel {
 
     	String nome = "";
     	for (int i=0; i<86; i++){
-    		int c = Binario.binaryStringToInt(raw.substring(i, i+8));
+    		int c = Binario.binaryStringToInt(raw.substring(i*8, (i*8)+8));
     		nome += (char) c;
     		if (c == 0) break;
     	}
@@ -636,6 +659,9 @@ public class MyKernel implements Kernel {
     	return nome;
     }
     
+    /*
+     * Executa automaticamente as funções do kernel de acordo com uma entrada de texto
+     */
     // Mecanismo da execução do batch
     private String executar(String linha) {
     	String[] info = linha.split(" ",2);
@@ -657,6 +683,9 @@ public class MyKernel implements Kernel {
 		}
     }
     
+    /*
+     * "Funções gemeas", pegam informações do HD e constroem estruturas legíveis
+     */
     // Procurar informações na HD e montar estrutras
     private Diretorio montarDir(int endereco) {
     	String dirRaw = "";
@@ -706,7 +735,7 @@ public class MyKernel implements Kernel {
     	// 7a informação, lista de arquivos
     	ArrayList<Integer> arrayArq = new ArrayList<Integer>();
     	for (int i=0; i<20; i++) {
-    		String pedaco = dirRaw.substring(8*i, (8*i)+80);
+    		String pedaco = dirRaw.substring(80*i, (80*i)+80);
     		int endNew = Binario.binaryStringToInt(pedaco);
     		if (endNew != 0) arrayArq.add(endNew);
     	}    	
@@ -754,13 +783,16 @@ public class MyKernel implements Kernel {
     	for (int i=0;i<400;i++){
     		String pedaco = dirRaw.substring(8*i, (8*i)+8);
     		if (!pedaco.equals("00000000"))
-        		nome += (char)Binario.binaryStringToInt(pedaco);
+        		conteudo += (char)Binario.binaryStringToInt(pedaco);
     		else break;
     	}
     	    	
     	return new Arquivo(estado, endereco, nome, pai, data, permit, conteudo);
     }
-    
+
+    /*
+     * "Funções gemeas", pegam estruturas prontas e escrevem no HD
+     */
     // Receber estruturas prontas e escrever no HD
     private void desmontarDir(Diretorio dir) {    	    	
     	// 1a parte: estado (fixo, estado sempre é 1 para dir's ativos)
@@ -841,6 +873,9 @@ public class MyKernel implements Kernel {
     	}
     }
     
+    /*
+     * Encontra o próximo bloco disponível a partir do estado salvo nele (1º byte)
+     */
     // Encontrar a próxima posição livre na hd
     private int findNextSpace() {
     	int saida = -1;
@@ -906,11 +941,6 @@ public class MyKernel implements Kernel {
     }
 
 	@Override
-	public String rmdir(String parameters) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
 	public String cp(String parameters) {
 		// TODO Auto-generated method stub
 		return null;
@@ -921,22 +951,7 @@ public class MyKernel implements Kernel {
 		return null;
 	}
 	@Override
-	public String rm(String parameters) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
 	public String chmod(String parameters) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
-	public String cat(String parameters) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
-	public String info() {
 		// TODO Auto-generated method stub
 		return null;
 	}

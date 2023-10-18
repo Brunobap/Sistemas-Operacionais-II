@@ -16,18 +16,21 @@ public class Arquivo extends Item {
 
 	public Arquivo(int pai, String nome, String conteudo) { 
 		super(nome, pai);
+		this.setEstado(2);
 		this.setConteudo(conteudo);
 		this.setPermissao(777);
 	}
 	
 	public Arquivo(int pai, Arquivo molde) {
 		super(molde.getNome(), pai);
+		this.setEstado(2);
 		this.setConteudo(molde.getConteudo());
 		this.setPermissao(molde.getPermissao());
 	}
 	
 	public Arquivo(int pai, String nome, Arquivo molde) {
 		super(nome, pai);
+		this.setEstado(2);
 		this.setConteudo(molde.getConteudo());
 		this.setPermissao(molde.getPermissao());
 	}

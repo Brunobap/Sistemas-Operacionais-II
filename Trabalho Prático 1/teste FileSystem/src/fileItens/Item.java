@@ -51,9 +51,16 @@ public class Item {
 	}	
 	
 		
+	@SuppressWarnings("deprecation")
 	public Item(String nome, int pai) {
 		this.nome = nome;
-		this.criacao = "123412341234";
+		Date agora = new Date();
+		this.criacao = 
+				(agora.getYear()+1900)+""+
+				(agora.getMonth()+1)+""+
+				agora.getDate()+""+
+				agora.getHours()+""+
+				agora.getMinutes();
 		this.pai = pai;
 	}
 	
