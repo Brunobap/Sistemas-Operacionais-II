@@ -1,59 +1,52 @@
 package fileItens;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
 public class Diretorio extends Item {
 	
-	private HashMap<String, Diretorio> mapDir;
-	private HashMap<String, Arquivo> mapFiles;
+	private ArrayList<Integer> mapDir;
+	private ArrayList<Integer> mapFiles;
 	
 	
-	public HashMap<String, Diretorio> getMapDir() {
+	public ArrayList<Integer> getMapDir() {
 		return mapDir;
 	}
-	public void setMapDir(HashMap<String, Diretorio> mapDir) {
+	public void setMapDir(ArrayList<Integer> mapDir) {
 		this.mapDir = mapDir;
 	}
-	public HashMap<String, Arquivo> getMapFiles() {
+	public ArrayList<Integer> getMapFiles() {
 		return mapFiles;
 	}
-	public void setMapFiles(HashMap<String, Arquivo> mapFiles) {
+	public void setMapFiles(ArrayList<Integer> mapFiles) {
 		this.mapFiles = mapFiles;
 	}
-	
-	public Diretorio copiar(Diretorio pai) {
-		Diretorio novo = new Diretorio(pai,this);
 		
-		for (Arquivo a : this.getMapFiles().values()) {
-			Arquivo addF = new Arquivo(novo,a);
-			novo.getMapFiles().put(addF.getNome(), addF);
-		}
-		for (Diretorio d : this.getMapDir().values()) {
-			Diretorio addD = d.copiar(novo);
-			novo.getMapDir().put(addD.getNome(), addD);
-		}
-		
-		return novo;
-	}
-	
-	// ctor pras outras pastas
-	public Diretorio (Diretorio pai, String nome) {
+	// ctor para pastas novas
+	public Diretorio (int pai, String nome) {
 		super(nome, pai);
-		if (this.getPai() == null) this.setPai(this);
-		this.setCriacao(new Date());
-		this.setPermissao("drwxrwxrwx");
-		this.mapDir = new HashMap<String, Diretorio>();
-		this.mapFiles = new HashMap<String, Arquivo>();
+		this.setPai(pai);
+		this.setEstado(1);
+		this.setPermissao(777);
+		this.mapDir = new ArrayList<Integer>();
+		this.mapFiles = new ArrayList<Integer>();
 	}
 	
-	public Diretorio (Diretorio pai, Diretorio molde) {
+	public Diretorio (int pai, Diretorio molde) {
 		super(molde.getNome(), pai);
-		if (this.getPai() == null) this.setPai(this);
-		this.setCriacao(new Date());
+		this.setEstado(1);
+		this.setPai(this.getEndereco());
 		this.setPermissao(molde.getPermissao());
-		this.mapDir = new HashMap<String, Diretorio>();
-		this.mapFiles = new HashMap<String, Arquivo>();
+		this.mapDir = new ArrayList<Integer>();
+		this.mapFiles = new ArrayList<Integer>();
+	}
+	
+	// ctor para pastas já salvas
+	public Diretorio (int estado, int endereco, String nome, int pai, String data, int permit, ArrayList<Integer> listDir, ArrayList<Integer> listArq) {
+		super(estado, endereco, nome, pai, data, permit);
+		this.mapDir = listDir;
+		this.mapFiles = listArq;
 	}
 	
 }

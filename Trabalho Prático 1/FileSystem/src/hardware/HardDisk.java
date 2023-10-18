@@ -13,6 +13,10 @@ public class HardDisk {
 
     private boolean hardDisk[];
     private int numeroDeBits;
+    
+    public int getNumBits() {
+    	return this.numeroDeBits;
+    }
 
     public HardDisk(int tamanhoDaMemoriaSecundaria) {
         this.numeroDeBits = tamanhoDaMemoriaSecundaria * 8 * 1024 * 1024;

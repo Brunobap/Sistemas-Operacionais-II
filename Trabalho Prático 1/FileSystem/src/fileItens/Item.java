@@ -5,46 +5,80 @@ import java.util.HashMap;
 
 public class Item {
 	
-	private String nome;
-	private Diretorio pai;
-	private Date criacao;
-	private String permissao;
-	private String caminho;
+	private int endereco;
 	
+	private int estado;
+	private String nome;
+	private int pai;
+	private String criacao;
+	private int permissao;
+	
+	public int getEndereco() {
+		return endereco;
+	}
+	public void setEndereco(int endereco) {
+		this.endereco = endereco;
+	}
+	public int getEstado() {
+		return estado;
+	}
+	public void setEstado(int estado) {
+		this.estado = estado;
+	}
 	public String getNome() {
 		return nome;
 	}
 	public void setNome(String nome) {
 		this.nome = nome;
 	}
-	public Diretorio getPai() {
+	public int getPai() {
 		return pai;
 	}
-	public void setPai(Diretorio pai) {
+	public void setPai(int pai) {
 		this.pai = pai;
 	}	
-	public Date getCriacao() {
+	public String getCriacao() {
 		return criacao;
 	}
-	public void setCriacao(Date criacao) {
+	public void setCriacao(String criacao) {
 		this.criacao = criacao;
 	}	
-	public String getPermissao() {
+	public int getPermissao() {
 		return permissao;
 	}
-	public void setPermissao(String permissao) {
+	public void setPermissao(int permissao) {
 		this.permissao = permissao;
 	}	
-	public String getCaminho() {
-		return caminho;
-	}
-	public void setCaminho(String caminho) {
-		this.caminho = caminho;
-	}	
+	
 		
-	public Item(String nome, Diretorio pai) {
+	@SuppressWarnings("deprecation")
+	public Item(String nome, int pai) {
 		this.nome = nome;
-		this.criacao = new Date();
-		if (pai != null) this.pai = pai;
+		Date agora = new Date();
+		
+		this.criacao =  (agora.getYear()+1900)+"";
+		
+		if (agora.getMonth()+1 < 10) this.criacao += '0';
+		this.criacao += (agora.getMonth()+1);
+		
+		if (agora.getDate() < 10) this.criacao += '0';
+		this.criacao += agora.getDate();
+		
+		if (agora.getHours() < 10) this.criacao += '0';
+		this.criacao += agora.getHours();
+				
+		if (agora.getMinutes() < 10) this.criacao += '0';
+		this.criacao += agora.getMinutes();
+		
+		this.pai = pai;
+	}
+	
+	public Item(int estado, int endereco, String nome, int pai, String data, int permit) {
+		this.estado = estado;
+		this.endereco = endereco;
+		this.nome = nome;
+		this.pai = pai;
+		this.criacao = data;
+		this.permissao = permit;
 	}
 }

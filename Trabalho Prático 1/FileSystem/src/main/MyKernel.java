@@ -6,8 +6,10 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import binary.Binario;
 import fileItens.Arquivo;
 import fileItens.Diretorio;
+import hardware.HardDisk;
 /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
@@ -21,17 +23,83 @@ import operatingSystem.Kernel;
  */
 public class MyKernel implements Kernel {
 	
-	private Diretorio atual;
-	private Diretorio raiz;
+	// Informações da hd
+	private int tamBloco = 512 * 8;
+	
+	private int atual;
 	private ArrayList<String> vetComandos;
+	private HardDisk hd;
 
     public MyKernel() {
-    	this.raiz = new Diretorio(null, "/");
-    	this.raiz.setPai(raiz);
-    	this.atual = this.raiz;
+    	Diretorio raiz = new Diretorio(0, "/");
+    	this.hd = new HardDisk(1);
+    	this.atual = 0;
     	this.vetComandos = new ArrayList<String>();
+    	this.hd.inicializarMemoriaSecundaria();
+    	desmontarDir(raiz);
     }
+  
+    // Concluídas 13/13 :^)
+    public String mkdir(String parameters) {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: mkdir");
+        System.out.println("\tParametros: " + parameters);
 
+        //inicio da implementacao do aluno
+        this.vetComandos.add("mkdir "+parameters);
+    	if (parameters.equals("/")) result = "mkdir: "+parameters+": Diretorio ja existe (Nenhum diretorio foi criado)";
+    	else {
+    		Diretorio aux;
+    		int i = 1;
+    		if (parameters.startsWith("../")) {
+    			aux = montarDir(this.atual);
+    			aux = montarDir(aux.getPai());
+    		} else if (parameters.startsWith("./")) aux = montarDir(this.atual);
+    		else {
+    			if (!parameters.startsWith("/")) i = 0;
+    			aux = montarDir(0);
+    		}
+    		    		
+    		String[] caminho = parameters.split("/");
+    		if (caminho[caminho.length-1].contains(".") || caminho[caminho.length-1].contains(" ")) return "mkdir: Nome de diretório inválido. (Nada foi criado)";
+    		
+    		// Buscar e criar as pastas
+    		for (; i<caminho.length; i++) {
+    			if (caminho[i].length() > 86) return "mkdir: Nome de diretório inválido, tamanho exagerado.";
+    			Diretorio temp = aux;
+    			for (int a : aux.getMapDir()) {
+    				String nome = this.findNome(a);
+    				if (nome.equals(caminho[i]+'\0')) {
+    					aux = montarDir(a);
+    					break;
+    				} 
+    			}
+
+    			if (aux != temp) result = "mkdir: "+parameters+": Diretorio ja existe (Nenhum diretorio foi criado)";
+    			else {
+	    			if (caminho[i].equals("..")) {
+	    				Diretorio pai = montarDir(aux.getPai());
+	    				aux = pai;
+	    			} else if (!caminho[i].equals(".")) {		
+		    			// Não achou a pasta, criar uma nova
+	    				int newEnd = this.findNextSpace();
+	    				if (newEnd<0) return "mkdir: Espaco de HD insuficiente. (Não foi criado o diretório '"+caminho[i]+"', e consequentes)";
+	    				Diretorio newDir = new Diretorio(aux.getEndereco(), caminho[i]);
+	    				newDir.setEndereco(newEnd);
+	    				aux.getMapDir().add(newEnd);
+	    				desmontarDir(aux);
+	    				desmontarDir(newDir);
+	    				aux = newDir;
+	    				result = "";
+					}
+    			}
+    		}    		
+    	}        	
+        //fim da implementacao do aluno
+        
+    	return result;
+    }
     public String ls(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -48,73 +116,43 @@ public class MyKernel implements Kernel {
         	else parameters = parameters.substring(2);
         } else if (parameters.endsWith("-l")) {
         	flgDetail = true;
-        	parameters = parameters.substring(0,parameters.indexOf("-l")-1);
+        	parameters = parameters.substring(0,parameters.indexOf(" -l"));
         }
         
-        Diretorio aux = encontrar(parameters);
+        Diretorio aux = findDir(parameters);
+        if (aux == null) return "ls: O diretório especificado não existe. (Nada foi mostrado)";
         
         if (flgDetail) {
-        	for (Diretorio d : aux.getMapDir().values())
+        	Diretorio d;
+        	for (int end : aux.getMapDir()) {
+        		d = montarDir(end);
         		result += 
-        			d.getPermissao()+" "+
-        			checkMonth(d.getCriacao().getMonth()+1)+" "+
-        			(d.getCriacao().getDate()+" ")+
-        			(d.getCriacao().getHours()+":"+d.getCriacao().getMinutes())+" "+
+        			'd'+findPermit(String.valueOf(d.getPermissao()))+" "+
+        			d.getCriacao()+" "+
         			d.getNome()+"\n";
-        	for (Arquivo a : aux.getMapFiles().values())
+        	}
+        	Arquivo a;
+        	for (int end : aux.getMapFiles()) {
+        		a = montarArq(end);
         		result += 
-        			a.getPermissao()+" "+
-        			checkMonth(a.getCriacao().getMonth()+1)+" "+
-        			(a.getCriacao().getDate()+" ")+
-        			(a.getCriacao().getHours()+":"+a.getCriacao().getMinutes())+" "+
-        			a.getNome()+"\n";
+	        		'-'+findPermit(String.valueOf(a.getPermissao()))+" "+
+	    			a.getCriacao()+" "+
+	    			a.getNome()+"\n";
+        	}
         } else {
-        	for (Diretorio d : aux.getMapDir().values())
-        		result += d.getNome()+" ";
-        	for (Arquivo a : aux.getMapFiles().values())
+        	Diretorio d;
+        	for (int end : aux.getMapDir()) {
+        		d = montarDir(end);
+        		result += d.getNome()+" ";        		
+        	}
+        	Arquivo a;
+        	for (int end : aux.getMapFiles()) {
+        		a = montarArq(end);
         		result += a.getNome()+" ";
+        	}
         } 
         //fim da implementacao do aluno
         return result;
-    }
-    public String mkdir(String parameters) {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: mkdir");
-        System.out.println("\tParametros: " + parameters);
-
-        //inicio da implementacao do aluno
-        this.vetComandos.add("mkdir "+parameters);
-    	if (parameters.equals("/")) result = "mkdir: "+parameters+": Diretorio ja existe (Nenhum diretorio foi criado)";
-    	else {
-    		Diretorio aux;
-    		int i = 1;
-    		if (parameters.startsWith("../")) aux = this.atual.getPai();
-    		else if (parameters.startsWith("./")) aux = this.atual;
-    		else {
-    			if (!parameters.startsWith("/")) i = 0;
-    			aux = this.raiz;
-    		}
-    		    		
-    		String[] caminho = parameters.split("/");
-    		if (caminho[caminho.length-1].contains(".") || caminho[caminho.length-1].contains(" ")) return "mkdir: Nome de diretório inválido. (Nada foi criado)";
-    		for (; i<caminho.length; i++) {
-    			if (aux.getMapDir().containsKey(caminho[i])) {
-    				aux = aux.getMapDir().get(caminho[i]);
-    				result = "mkdir: "+parameters+": Diretorio ja existe (Nenhum diretorio foi criado)";
-    			} else if (caminho[i].equals("..")) {					
-					aux = aux.getPai();
-				} else if (!caminho[i].equals(".")) {
-    				Diretorio novo = new Diretorio(aux, caminho[i]);
-    				aux.getMapDir().put(caminho[i], novo);
-    				aux = novo;
-    				result = "";
-    			}
-    		}    		
-    	}        	
-        //fim da implementacao do aluno
-        
-    	return result;
     }
     public String cd(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
@@ -128,16 +166,22 @@ public class MyKernel implements Kernel {
         //indique o diretório atual. Por exemplo... /
         currentDir = operatingSystem.fileSystem.FileSytemSimulator.currentDir;
         
-        Diretorio aux = encontrar(parameters);
+        if (!(parameters.startsWith("../") || parameters.startsWith("./") || parameters.startsWith("/"))) parameters = "./"+parameters;
+        Diretorio aux = findDir(parameters);
         if (aux == null) return "cd: Diretório não foi encontrado.";
-		this.atual = aux;
+		this.atual = aux.getEndereco();
 
-        //setando parte gráfica do diretorio atual
+        //setando parte gráfica do diretorio atual	
+		String[] caminho = parameters.split("/");
+		for (String s : caminho)
+			if (s.equals("..")) {
+				if (!currentDir.equals("/")) currentDir = currentDir.substring(0, currentDir.indexOf("/",caminho.length-1)+1);
+			} else if (!s.equals(".")) currentDir += s+"/";
         operatingSystem.fileSystem.FileSytemSimulator.currentDir = currentDir;
 
         //fim da implementacao do aluno
         return result;
-    }
+    }    
     public String createfile(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -153,22 +197,26 @@ public class MyKernel implements Kernel {
         if (strCam.contains("/")) {
         	caminho = strCam.substring(0, strCam.lastIndexOf("/"));
         	nome = strCam.substring(strCam.lastIndexOf("/")+1);
-        } else nome = caminho;
-        Diretorio aux = encontrar(caminho);
+        } else nome = strCam;
+        Diretorio aux = findDir(caminho);
         if (aux == null) return "createfile: Diretório não encontrado. (Nenhum arquivo criado)";
                       
         String texto = parameters.substring(parameters.indexOf(" ")+1);
         
-		if (aux.getMapFiles().containsKey(nome)) 
-			result = "createfile: Arquivo já existe. Não foi posível criá-lo.";
-		else {
-			if ((nome.contains(" ") || nome.contains("/")) && !nome.contains(".")) return "createfile: Nome de arquivo inválido. (Nada foi criado)";
-			String conteudo = texto.replaceAll("\\\\n", "\n");
-			Arquivo novo = new Arquivo(aux, nome, conteudo);
-			
-			aux.getMapFiles().put(nome, novo);
-		}
-        
+        for (int end : aux.getMapFiles()) if (findNome(end).equals(nome)) return "createfile: Arquivo já existe. Não foi posível criá-lo.";
+		if ((nome.contains(" ") || nome.contains("/")) && !nome.contains(".") || nome.length()>86) return "createfile: Nome de arquivo inválido. (Nada foi criado)";
+		
+		String conteudo = texto.replaceAll("\\\\n", "\n");
+		if (conteudo.length()>400) return "createfile: Conteúdo excessivo, limite de 400 caracteres. (Nada foi criado)";
+		
+		int newEnd = findNextSpace();
+		if (newEnd<0) return "createfile: Sem espaço suficiente para criar arquivo. (Nada foi criado)";
+		Arquivo novo = new Arquivo(aux.getEndereco(), nome, conteudo);
+		novo.setEndereco(newEnd);
+		
+		aux.getMapFiles().add(novo.getEndereco());
+        desmontarDir(aux);
+        desmontarArq(novo);
         //fim da implementacao do aluno
         return result;
     }
@@ -185,34 +233,25 @@ public class MyKernel implements Kernel {
         if (parameters.contains("/")) {
         	caminho = parameters.substring(0,parameters.lastIndexOf("/"));
         	nome = parameters.substring(parameters.lastIndexOf("/")+1);
-        } else nome = parameters;
+        } else {
+        	nome = parameters;
+        	caminho = "";
+        }
         
-        Diretorio aux = encontrar(caminho);
+        Diretorio aux = findDir(caminho);
 		if (aux == null) return "cat: Diretorio do arquivo não existe. (Nada foi lido)";
 			
-		if (aux.getMapFiles().containsKey(nome)) result = aux.getMapFiles().get(nome).getConteudo();
+		Arquivo alvo = null;
+		for (int end : aux.getMapFiles()) {
+			String s = findNome(end);
+			if (s.equals(nome+'\0')) {
+				alvo = montarArq(end);
+				break;
+			}
+		}
+		if (alvo != null) result = alvo.getConteudo();
 		else result = "cat: Arquivo não existe. (Nada foi lido)";
         //fim da implementacao do aluno
-        return result;
-    }
-    public String info() {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: info");
-        System.out.println("\tParametros: sem parametros");
-
-        this.vetComandos.add("info");
-        //nome do aluno
-        String name = "Bruno Ribeiro Batista";
-        //numero de matricula
-        String registration = "202111020022";
-        //versao do sistema de arquivos
-        String version = "1.0";
-
-        result += "Nome do Aluno:        " + name;
-        result += "\nMatricula do Aluno:   " + registration;
-        result += "\nVersao do Kernel:     " + version;
-
         return result;
     }
     public String rmdir(String parameters) {
@@ -229,14 +268,23 @@ public class MyKernel implements Kernel {
         	caminho = parameters.substring(0,parameters.lastIndexOf("/"));
         	strAlvo = parameters.substring(parameters.lastIndexOf("/")+1);
         } else strAlvo = parameters;
-        Diretorio aux = encontrar(caminho);
+        Diretorio aux = findDir(caminho);
 		if (aux == null) return "rmdir: Diretório "+parameters+"não existe. (Nada foi removido)";
 		
-		if (aux.getMapDir().containsKey(strAlvo)) {
-			Diretorio dirAlvo = aux.getMapDir().get(strAlvo);
-			if (dirAlvo.getMapDir().isEmpty() && dirAlvo.getMapFiles().isEmpty()) 
-				aux.getMapDir().remove(dirAlvo.getNome());
-			else result = "rmdir: Diretório "+parameters+" possui arquivos e/ou diretórios. (Nada foi removido)";
+		Diretorio dirAlvo = null;
+		for (int end : aux.getMapDir()) 
+			if (findNome(end).equals(strAlvo+'\0')) {
+				dirAlvo = montarDir(end);
+				break;
+			}
+		if (dirAlvo != null) {
+			if (dirAlvo.getEndereco() == 0) return "rmdir: Não é possível remover o diretório raíz. (Nada foi removido)";
+			if (dirAlvo.getMapDir().isEmpty() && dirAlvo.getMapFiles().isEmpty()) {
+				aux.getMapDir().remove(aux.getMapDir().indexOf(dirAlvo.getEndereco()));
+				dirAlvo.setEstado(0);
+				desmontarDir(dirAlvo);
+				desmontarDir(aux);
+			} else result = "rmdir: Diretório "+parameters+" possui arquivos e/ou diretórios. (Nada foi removido)";
 		} else result = "rmdir: Diretório "+parameters+" não existe. (Nada foi removido)";
 		
         //fim da implementacao do aluno
@@ -252,7 +300,7 @@ public class MyKernel implements Kernel {
         this.vetComandos.add("rm "+parameters);
         
         boolean isDir = false;
-        if (parameters.startsWith("-R ")) {
+        if (parameters.startsWith("-R ") || parameters.startsWith("-r ")) {
         	isDir = true;
         	parameters = parameters.substring(3);
         }
@@ -263,18 +311,49 @@ public class MyKernel implements Kernel {
         	caminho = parameters.substring(0, parameters.lastIndexOf("/"));
         	strAlvo = parameters.substring(parameters.lastIndexOf("/")+1);
         } else strAlvo = parameters;
-        Diretorio aux = encontrar(caminho);
+        Diretorio aux = findDir(caminho);
         if (aux == null) result = "rm: Diretório "+parameters+"não existe. (Nada foi removido)";
 
 		if (isDir) {
-			if (aux.getMapDir().containsKey(strAlvo)) {
-				Diretorio dirAlvo = aux.getMapDir().get(strAlvo);
-				aux.getMapDir().remove(dirAlvo.getNome());
+			if (aux.getEndereco() == 0) return "rm: Não é possível remover o diretório raíz. (Nada foi removido)";
+			Diretorio dirAlvo = null;
+			for (int end : aux.getMapDir()) 
+				if (findNome(end).equals(strAlvo+'\0')) {
+					dirAlvo = montarDir(end);
+					break;
+				}
+			if (dirAlvo != null) {
+				int index = aux.getMapDir().indexOf(dirAlvo.getEndereco());
+				aux.getMapDir().remove(index);
+				dirAlvo.setEstado(0);
+				// Apagar todos os arquivos
+				for (int end : dirAlvo.getMapFiles()) {
+					Arquivo a = montarArq(end);
+					a.setEstado(0);
+					desmontarArq(a);
+				}
+				// Apagar todas as pastas
+				for (int end : dirAlvo.getMapDir()) {
+					String nome = findNome(end);
+					nome = nome.substring(0,nome.length());
+					this.rm("-R "+caminho+"/"+nome);
+				}
+				desmontarDir(dirAlvo);
+				desmontarDir(aux);
 			} else result = "rm: Diretório "+parameters+" não existe. (Nada foi removido)";
 		} else {
-			if (aux.getMapFiles().containsKey(strAlvo)) {
-				Arquivo dirAlvo = aux.getMapFiles().get(strAlvo);
-				aux.getMapFiles().remove(dirAlvo.getNome());
+			Arquivo arqAlvo = null;
+			for (int end : aux.getMapFiles()) 
+				if (findNome(end).equals(strAlvo+'\0')) {
+					arqAlvo = montarArq(end);
+					break;
+				}
+			if (arqAlvo != null) {
+				int index = aux.getMapFiles().indexOf(arqAlvo.getEndereco());
+				aux.getMapFiles().remove(index);
+				arqAlvo.setEstado(0);
+				desmontarArq(arqAlvo);
+				desmontarDir(aux);
 			} else result = "rm: Arquivo "+parameters+" não existe. (Nada foi removido)";
 		}
         //fim da implementacao do aluno
@@ -294,8 +373,8 @@ public class MyKernel implements Kernel {
         	parameters = parameters.substring(3);
         }
 
-        String numPermit = parameters.substring(0, 3);
-        String strPermit = findPermit(numPermit);
+        String strPermit = parameters.substring(0, 3);
+        int numPermit = Integer.parseInt(strPermit);
         parameters = parameters.substring(4);
         
 		String caminho = "";
@@ -304,23 +383,41 @@ public class MyKernel implements Kernel {
 			caminho = parameters.substring(0,parameters.lastIndexOf("/"));
 			strAlvo = parameters.substring(parameters.lastIndexOf("/")+1);
 		} else strAlvo = parameters;
-        Diretorio aux = encontrar(caminho);
+        Diretorio aux = findDir(caminho);
         if (aux == null) return "chmod: Diretório "+parameters+" não existe. (Nada foi modificado)";
 
 		if (isDir) {
-			if (aux.getMapDir().containsKey(strAlvo)) {
-				Diretorio dirAlvo = aux.getMapDir().get(strAlvo);	
-				
-				for (Diretorio d: dirAlvo.getMapDir().values())
-					d.setPermissao("d"+strPermit);
-				for (Arquivo a: dirAlvo.getMapFiles().values())
-					a.setPermissao("-"+strPermit);
+			Diretorio dirAlvo = null;
+			for (int end : aux.getMapDir())
+				if (findNome(end).equals(strAlvo+'\0')) {
+					dirAlvo = montarDir(end);
+					break;
+				}
+			if (dirAlvo != null) {				
+				for (int end : dirAlvo.getMapDir()) {
+					Diretorio d = montarDir(end);
+					d.setPermissao(numPermit);
+					desmontarDir(d);
+				}
+				for (int end: dirAlvo.getMapFiles()) {
+					Arquivo a = montarArq(end);
+					a.setPermissao(numPermit);
+					desmontarArq(a);
+				}
+				dirAlvo.setPermissao(numPermit);
+				desmontarDir(dirAlvo);
 					
 			} else result = "chmod: Diretório "+parameters+" não existe. (Nada foi modificado)";
 		} else {
-			if (aux.getMapFiles().containsKey(strAlvo)) {
-				Arquivo target = aux.getMapFiles().get(strAlvo);
-				target.setPermissao("-"+strPermit);
+			Arquivo arqAlvo = null;
+			for (int end : aux.getMapFiles())
+				if (findNome(end).equals(strAlvo+'\0')) {
+					arqAlvo = montarArq(end);
+					break;
+				}
+			if (arqAlvo != null) {
+				arqAlvo.setPermissao(numPermit);
+				desmontarArq(arqAlvo);
 			} else result = "chmod: Arquivo "+parameters+" não existe. (Nada foi modificado)";
 		}
         //fim da implementacao do aluno
@@ -350,39 +447,105 @@ public class MyKernel implements Kernel {
         	tgtDst = paramSplit[1].substring(paramSplit[1].lastIndexOf("/")+1);
         } else tgtDst = paramSplit[1];
 		
-		Diretorio aux1 = encontrar(camOri);
+		Diretorio aux1 = findDir(camOri);
 		if (aux1 == null) return "mv: Arquivo/Diretório não existe.";
 
-		Diretorio aux2 = encontrar(camDst);
+		Diretorio aux2 = findDir(camDst);
 		if (aux2 == null) return "mv: Arquivo/Diretório não existe.";
 			
 		// Pastas  iguais, renomear
-		if (aux1 == aux2) {
-			if (aux1.getMapFiles().containsKey(tgtOri)) {
-				if (aux1.getMapFiles().containsKey(tgtDst)) return "mv: Já existe um arquivo com esse nome. (Nada foi renomeado)";
-				Arquivo a = aux1.getMapFiles().remove(tgtOri);
-				a.setNome(tgtDst);
-				aux1.getMapFiles().put(tgtDst, a);
+		if (aux1.getEndereco() == aux2.getEndereco()) {
+			if (tgtOri.contains(".") && tgtDst.contains(".")) {
+				Arquivo a = null;
+				for (int end : aux1.getMapFiles()) {
+					String nome = findNome(end);
+					if (nome.equals(tgtOri+'\0')) {
+						a = montarArq(end);
+						break;
+					}
+					if (nome.equals(tgtDst+'\0'))
+						return "mv: Já existe um arquivo com esse nome. (Nada foi renomeado)";
+				}
 				
-			} else if (aux1.getMapDir().containsKey(tgtOri)) {
-				if (aux1.getMapDir().containsKey(tgtDst)) return "mv: Já existe um diretório com esse nome. (Nada foi renomeado)";
-				Diretorio d = aux1.getMapDir().remove(tgtOri);
-				d.setNome(tgtDst);
-				aux1.getMapDir().put(tgtDst, d);
+				if (a != null) {					
+					a.setNome(tgtDst);
+					desmontarArq(a);	
+					
+				} else return "mv: Arquivo/Diretório não existe. (Nada foi renomeado)";	
 				
-			} else return "mv: Arquivo/Diretório não existe. (Nada foi renomeado)";				
+			} else if (!tgtOri.contains(".") && !tgtDst.contains(".")) {
+				for (int end : aux1.getMapDir())
+					if (findNome(end).equals(tgtDst+'\0'))
+						return "mv: Já existe um arquivo com esse nome. (Nada foi renomeado)";
+				
+				Diretorio d = null;
+				for (int end : aux1.getMapDir()) 
+					if (findNome(end).equals(tgtOri+'\0')) {
+						d = montarDir(end);
+						break;
+					}
+				
+				if (d != null) {					
+					d.setNome(tgtDst);
+					desmontarDir(d);	
+					
+				} else return "mv: Arquivo/Diretório não existe. (Nada foi renomeado)";	
+				
+			} else return "mv: Tipos diferentes de item. (Nada foi renomeado)";				
 		
 		// Pastas diferentes, mover
 		} else {
-			if (aux1.getMapFiles().containsKey(tgtOri)) {
-				Arquivo a = aux1.getMapFiles().remove(tgtOri);
-				aux2.getMapFiles().put(a.getNome(), a);
+			if (tgtOri.contains(".") && tgtDst.contains(".")) {
+				if (aux2.getMapFiles().size() == 20)
+					return "mv: Diretório destino não tem espaço suficiente. (Nada foi movido)";
+				Arquivo a = null;
+				int index = 0;
+				for (int end : aux1.getMapFiles()) {
+					String nome = findNome(end);
+					if (nome.equals(tgtOri+'\0')) {
+						a = montarArq(end);
+						index = aux1.getMapFiles().indexOf(end);
+						break;
+					}
+				}
 				
-			} else if (aux1.getMapDir().containsKey(tgtOri)) {
-				Diretorio d = aux1.getMapDir().remove(tgtOri);
-				aux2.getMapDir().put(d.getNome(), d);
+				if (a != null) {
+					a.setPai(aux2.getEndereco());
+					aux1.getMapFiles().remove(index);
+					aux2.getMapFiles().add(a.getEndereco());
+					desmontarArq(a);	
+					desmontarDir(aux1);
+					desmontarDir(aux2);
+					
+				} else return "mv: Arquivo/Diretório não existe. (Nada foi renomeado)";	
 				
-			} else return "mv: Arquivo/Diretório não existe. (Nada foi movido)";	
+			} else if (!tgtOri.contains(".") && !tgtDst.contains(".")) {
+				if (aux2.getMapDir().size() == 20)
+					return "mv: Diretório destino não tem espaço suficiente. (Nada foi movido)";
+				Diretorio d = null;
+				int index = 0;
+				for (int end : aux1.getMapDir()) {
+					String nome = findNome(end);
+					if (nome.equals(tgtOri+'\0')) {
+						d = montarDir(end);
+						index = aux1.getMapDir().indexOf(end);
+						break;
+					}
+					if (nome.equals(tgtDst+'\0'))
+						return "mv: Já existe um arquivo com esse nome. (Nada foi renomeado)";
+				}
+				
+				if (d != null) {					
+					d.setPai(aux2.getEndereco());
+					aux1.getMapDir().remove(index);
+					aux2.getMapDir().add(d.getEndereco());
+					desmontarDir(d);	
+					desmontarDir(aux1);
+					desmontarDir(aux2);	
+					
+				} else return "mv: Arquivo/Diretório não existe. (Nada foi renomeado)";	
+				
+			} else return "mv: Tipos diferentes de item. (Nada foi renomeado)";		
 		}
         //fim da implementacao do aluno
         return result;
@@ -417,28 +580,55 @@ public class MyKernel implements Kernel {
         	tgtDst = paramSplit[1].substring(paramSplit[1].lastIndexOf("/")+1);
         } else tgtDst = paramSplit[1];
 
-        Diretorio aux1 = encontrar(camOri);
+        Diretorio aux1 = findDir(camOri);
         if (aux1 == null) return "cp: Diretório não encontrado. (Nada foi copiado)";
         
-        Diretorio aux2 = encontrar(camDst);
+        Diretorio aux2 = findDir(camDst);
         if (aux2 == null) return "cp: Diretório não encontrado. (Nada foi copiado)";
 		
 		// Copiar sem renomear
 		if (paramSplit[1].endsWith("/")) {
 			if (isDir) {
-				if (aux2.getMapDir().containsKey(tgtDst)) return "cp: O diretório já existe. (Nada foi copiado)";
-				if (aux1.getMapDir().containsKey(tgtOri)) {
-					Diretorio copiado = aux1.getMapDir().get(tgtOri);
-					Diretorio copia = copiado.copiar(aux2);
-					aux2.getMapDir().put(copia.getNome(), copia);
+				for (int end : aux2.getMapDir())
+					if (findNome(end).equals(tgtDst+'\0'))
+						return "cp: O diretório já existe. (Nada foi copiado)";
+				
+				Diretorio d = null;
+				for (int end : aux1.getMapDir())
+					if (findNome(end).equals(tgtOri+'\0')) {
+						d = montarDir(end);
+					}
+						
+				if (d != null) {
+					ArrayList<Integer> livre = findAllFreeSpace();
+					if (livre.size() == 0) return "cp: Não há espaço suficiente no HD para copiar o diretório. (Nada foi copiado)";
+					Diretorio copia = copiar(d, aux2.getEndereco(), livre);
+					if (copia == null) return "cp: Não há espaço suficiente no HD para copiar o diretório. (Nada foi copiado)";
+					aux2.getMapDir().add(copia.getEndereco());
+					desmontarDir(copia);
+					desmontarDir(aux2);
 				}
 				
 			} else {
-				if (aux2.getMapFiles().containsKey(tgtDst)) return "cp: O arquivo já existe. (Nada foi copiado)";
-				if (aux1.getMapFiles().containsKey(tgtOri)) {
-					Arquivo molde = aux1.getMapFiles().get(tgtOri);
-					Arquivo novo = new Arquivo(aux2, molde);
-					aux2.getMapFiles().put(novo.getNome(), novo);
+				for (int end : aux2.getMapFiles())
+					if (findNome(end).equals(tgtDst+'\0')) 
+						return "cp: O arquivo já existe. (Nada foi copiado)";
+				
+				Arquivo molde = null;
+				for (int end: aux1.getMapFiles())
+					if (findNome(end).equals(tgtOri+'\0')) {
+						molde = montarArq(end);
+						break;
+					}
+				
+				if (molde != null) {
+					int newEnd = findNextSpace();
+					if (newEnd < 0) return "cp: Espaço insuficiente no diretório destino. (Nada foi copiado)";
+					Arquivo novo = new Arquivo(aux2.getEndereco(), molde);
+					novo.setEndereco(newEnd);
+					aux2.getMapFiles().add(newEnd);
+					desmontarArq(novo);
+					desmontarDir(aux2);
 					
 				} else return "cp: Arquivo não foi encontrado. (Nada foi copiado)";
 			}
@@ -446,21 +636,48 @@ public class MyKernel implements Kernel {
 		// Copiar com novo nome
 		} else {
 			if (isDir) {
-				if (aux2.getMapDir().containsKey(tgtDst)) return "cp: O diretório já existe. (Nada foi copiado)";
-				if (aux1.getMapDir().containsKey(tgtOri)) {
-					Diretorio copiado = aux1.getMapDir().get(tgtOri);
-					Diretorio copia = copiado.copiar(aux2);
+				for (int end : aux2.getMapFiles())
+					if (findNome(end).equals(tgtDst+'\0')) return "cp: O diretório já existe. (Nada foi copiado)";
+				
+				Diretorio copiado = null;
+				for (int end : aux1.getMapDir())
+					if (findNome(end).equals(tgtOri+'\0')) {
+						copiado = montarDir(end);
+						break;
+					}
+				
+				if (copiado != null) {
+					ArrayList<Integer> livre = findAllFreeSpace();
+					if (livre.size() == 0) return "cp: Não há espaço suficiente no HD para copiar o diretório. (Nada foi copiado)";
+					Diretorio copia = copiar(copiado, aux2.getEndereco(), livre);
+					if (copia == null) return "cp: Não há espaço suficiente no HD para copiar o diretório. (Nada foi copiado)";
 					copia.setNome(tgtDst);
-					aux2.getMapDir().put(copia.getNome(), copia);
+					aux2.getMapDir().add(copia.getEndereco());
+					desmontarDir(copia);
+					desmontarDir(aux2);
 				}
 				
 			} else {
-				if (aux2.getMapFiles().containsKey(tgtDst)) return "cp: O arquivo já existe. (Nada foi copiado)";
-				if ((tgtDst.contains(" ") || tgtDst.contains("/")) && !tgtDst.contains(".")) return "mv: Nome de arquivo inválido. (Nada foi copiado)";
-				if (aux1.getMapFiles().containsKey(tgtOri)) {
-					Arquivo molde = aux1.getMapFiles().get(tgtOri);
-					Arquivo novo = new Arquivo(aux2, tgtDst, molde);
-					aux2.getMapFiles().put(novo.getNome(), novo);
+				for (int end : aux2.getMapFiles())
+					if (findNome(end).equals(tgtDst+'\0')) return "cp: O arquivo já existe. (Nada foi copiado)";
+				
+				if ((tgtDst.contains(" ") || tgtDst.contains("/")) && !tgtDst.contains(".") && tgtDst.length()>86) return "mv: Nome de arquivo inválido. (Nada foi copiado)";
+				
+				Arquivo molde = null;
+				for (int end : aux1.getMapFiles())
+					if (findNome(end).equals(tgtOri+'\0')) {
+						molde = montarArq(end);
+						break;
+					}
+				
+				if (molde != null) {
+					int newEnd = findNextSpace();
+					if (newEnd < 0) return "cp: Espaço insuficiente no diretório destino. (Nada foi copiado)";
+					Arquivo novo = new Arquivo(aux2.getEndereco(), tgtDst, molde);
+					novo.setEndereco(newEnd);
+					aux2.getMapFiles().add(newEnd);
+					desmontarArq(novo);
+					desmontarDir(aux2);
 					
 				} else return "cp: Arquivo não foi encontrado. (Nada foi copiado)";
 			}
@@ -469,8 +686,26 @@ public class MyKernel implements Kernel {
         //fim da implementacao do aluno
         return result;
     }
-    
-    // 2 de 13 Concluidas
+    public String info() {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: info");
+        System.out.println("\tParametros: sem parametros");
+
+        this.vetComandos.add("info");
+        //nome do aluno
+        String name = "Bruno Ribeiro Batista";
+        //numero de matricula
+        String registration = "202111020022";
+        //versao do sistema de arquivos
+        String version = "2.0";
+
+        result += "Nome do Aluno:        " + name;
+        result += "\nMatricula do Aluno:   " + registration;
+        result += "\nVersao do Kernel:     " + version;
+
+        return result;
+    }
     public String dump(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -520,33 +755,82 @@ public class MyKernel implements Kernel {
     }
           
     
-    // FUNÇÕES UTITLITARIAS
-    private Diretorio encontrar(String parameters) {
-    	if (parameters.equals("")) return this.atual;
+    // FUNÇÕES UTITLITARIAS:
+    //Encontrar uma pasta na HD, e devolve-la montada
+    private Diretorio findDir(String parameters) {
+    	if (parameters.isEmpty() || parameters.equals(" ")) return montarDir(this.atual);
     	
     	Diretorio aux;
     	int i = 1;
     	if (parameters.startsWith("../")) {
-        	aux = this.atual.getPai();
+    		aux = montarDir(this.atual);
+        	aux = montarDir(aux.getPai());
         } else if (parameters.startsWith("./")) {
-        	aux = this.atual;
-        } else {
-			if (!parameters.startsWith("/")) i = 0;
-			aux = this.raiz;
+        	aux = montarDir(this.atual);
+        } else if (!parameters.startsWith("/")) {
+			i = 0;
+			aux = montarDir(0);
+		} else {
+			i = 0;
+			aux = montarDir(this.atual);
 		}
         
         String[] caminho = parameters.split("/");
 		for (; i<caminho.length; i++) {
-			if (aux.getMapDir().containsKey(caminho[i])) {
-				aux = aux.getMapDir().get(caminho[i]);
-			} else if (caminho[i].equals("..")) {					
-				aux = aux.getPai();
-			} else if (!caminho[i].equals(".")) return null;
+			if (caminho[i].equals("..")) {					
+				aux = montarDir(aux.getPai());
+			} else if (!caminho[i].equals(".")) {
+				int endEscolhido = 0;
+				String strEscolhido = "";
+				for (int endPasta : aux.getMapDir()) {
+					// 1o: Pegar o monte de bits do nome do filho
+					String raw = "";
+					for (int j=0; j<86*8; j++)
+						if (hd.getBitDaPosicao(endPasta+(j+8))) raw += "1";
+						else raw += "0";
+					
+					// 2o: converter o bruto em String
+					String nome = "";
+			    	for (int j=0;j<86;j++){
+			    		String pedaco = raw.substring(8*j, (8*j)+8);
+			    		if (!pedaco.equals("00000000")) nome += (char)Binario.binaryStringToInt(pedaco);
+			    		else break;
+			    	}
+			    	
+			    	// 3o: verificar se o nome bate
+			    	if (caminho[i].equals(nome)) {
+			    		endEscolhido = endPasta;
+			    		strEscolhido = nome;
+			    		break;			    	
+			    	}
+				}	
+				if (!strEscolhido.equals("")) aux = montarDir(endEscolhido);
+				else return null;
+			}
 		}
 		
 		return aux;
     }
     
+    // Encontra o nome de um item salvo no endereço passado
+    private String findNome(int end) {
+    	
+    	String raw = "";
+    	for (int i=0; i<86*8; i++)
+    		if (this.hd.getBitDaPosicao(end+8+i)) raw += '1';
+    		else raw += '0';
+
+    	String nome = "";
+    	for (int i=0; i<86; i++){
+    		int c = Binario.binaryStringToInt(raw.substring(i*8, (i*8)+8));
+    		nome += (char) c;
+    		if (c == 0) break;
+    	}
+    	
+    	return nome;
+    }
+    
+    //Executa automaticamente as funções do kernel de acordo com uma entrada de texto
     private String executar(String linha) {
     	String[] info = linha.split(" ",2);
     	switch (info[0]) {
@@ -567,25 +851,211 @@ public class MyKernel implements Kernel {
 		}
     }
     
-    private static String checkMonth(int month) {
-    	switch (month) {
-			case 1:  return "Jan";
-			case 2: return "Feb";
-			case 3: return "Mar";
-			case 4: return "Apr";
-			case 5: return "May";
-			case 6: return "Jun";
-			case 7: return "Jul";
-			case 8: return "Aug";
-			case 9: return "Sep";
-			case 10: return "Oct";
-			case 11: return "Nov";
-			case 12: return "Dec";
-			
-			default: return "-";
+    //"Funções gêmeas", pegam informações do HD e constroem estruturas legíveis
+    private Diretorio montarDir(int endereco) {
+    	String dirRaw = "";
+    	for (int i=0; i<tamBloco; i++)
+    		if (this.hd.getBitDaPosicao(endereco+i)) dirRaw += "1";
+    		else dirRaw += "0";
+    	
+    	// 1a informação, Estado
+    	int estado = Binario.binaryStringToInt(dirRaw.substring(0, 8));
+    	dirRaw = dirRaw.substring(8);
+    	
+    	// 2a informação, Nome
+    	String nome = "";
+    	for (int i=0;i<86;i++){
+    		String pedaco = dirRaw.substring(8*i, (8*i)+8);
+    		if (!pedaco.equals("00000000"))
+        		nome += (char)Binario.binaryStringToInt(pedaco);
+    		else break;
     	}
-	}
+    	dirRaw = dirRaw.substring(688);
+    	
+    	// 3a informação, Ponteiro Pai
+    	int pai = Binario.binaryStringToInt(dirRaw.substring(0, 80));
+    	dirRaw = dirRaw.substring(80);
+    	
+    	// 4a informação, Data de Criação
+    	String data = "";
+    	for (int i=0; i<12; i++)
+    		data += Binario.binaryStringToInt(dirRaw.substring((8*i)+4, 8*(i+1)));
+    	dirRaw = dirRaw.substring(96);
+    	
+    	// 5a informação, Permissão
+    	int permit = 100*Binario.binaryStringToInt(dirRaw.substring(0,8));
+    	permit += 10*Binario.binaryStringToInt(dirRaw.substring(8,16));
+    	permit += Binario.binaryStringToInt(dirRaw.substring(16,24));
+    	dirRaw = dirRaw.substring(24);
+    	
+    	// 6a informação, lista de pastas
+    	ArrayList<Integer> arrayDir = new ArrayList<Integer>();
+    	for (int i=0; i<20; i++) {
+    		String pedaco = dirRaw.substring(80*i, (80*i)+80);
+    		int endNew = Binario.binaryStringToInt(pedaco);
+    		if (endNew != 0) arrayDir.add(endNew);
+    	}
+    	dirRaw = dirRaw.substring(1600);
+    	
+    	// 7a informação, lista de arquivos
+    	ArrayList<Integer> arrayArq = new ArrayList<Integer>();
+    	for (int i=0; i<20; i++) {
+    		String pedaco = dirRaw.substring(80*i, (80*i)+80);
+    		int endNew = Binario.binaryStringToInt(pedaco);
+    		if (endNew != 0) arrayArq.add(endNew);
+    	}    	
+    	
+    	return new Diretorio(estado, endereco, nome, pai, data, permit, arrayDir, arrayArq);
+    }
+    private Arquivo montarArq (int endereco) {
+    	String dirRaw = "";
+    	for (int i=0; i<tamBloco; i++)
+    		if (this.hd.getBitDaPosicao(endereco+i)) dirRaw += "1";
+    		else dirRaw += "0";
+    	
+    	// 1a informação, Estado
+    	int estado = Binario.binaryStringToInt(dirRaw.substring(0, 8));
+    	dirRaw = dirRaw.substring(8);
+    	
+    	// 2a informação, Nome
+    	String nome = "";
+    	for (int i=0;i<86;i++){
+    		String pedaco = dirRaw.substring(8*i, (8*i)+8);
+    		if (!pedaco.equals("00000000"))
+        		nome += (char)Binario.binaryStringToInt(pedaco);
+    		else break;
+    	}
+    	dirRaw = dirRaw.substring(688);
+    	
+    	// 3a informação, Ponteiro Pai
+    	int pai = Binario.binaryStringToInt(dirRaw.substring(0, 80));
+    	dirRaw = dirRaw.substring(80);
+    	
+    	// 4a informação, Data de Criação
+    	String data = "";
+    	for (int i=0; i<12; i++)
+    		data += Binario.binaryStringToInt(dirRaw.substring((8*i)+4, 8*(i+1)));
+    	dirRaw = dirRaw.substring(96);
+    	
+    	// 5a informação, Permissão
+    	int permit = 100*Binario.binaryStringToInt(dirRaw.substring(0,8));
+    	permit += 10*Binario.binaryStringToInt(dirRaw.substring(8,16));
+    	permit += Binario.binaryStringToInt(dirRaw.substring(16,24));
+    	dirRaw = dirRaw.substring(24);
+    	
+    	// 6a informação, conteudo
+    	String conteudo = "";
+    	for (int i=0;i<400;i++){
+    		String pedaco = dirRaw.substring(8*i, (8*i)+8);
+    		if (!pedaco.equals("00000000"))
+        		conteudo += (char)Binario.binaryStringToInt(pedaco);
+    		else break;
+    	}
+    	    	
+    	return new Arquivo(estado, endereco, nome, pai, data, permit, conteudo);
+    }
+
+    // "Funções gêmeas", pegam estruturas prontas e escrevem no HD
+    private void desmontarDir(Diretorio dir) {    	    	
+    	// 1a parte: estado (fixo, estado sempre é 1 para dir's ativos)
+    	String strBin = Binario.intToBinaryString(dir.getEstado(), 8);
+    	
+    	// 2a parte: nome da pasta
+    	String aux = dir.getNome();
+    	for (int i=0; i<86; i++) 
+    		if (i >= aux.length()) strBin += "00000000";
+    		else strBin += Binario.intToBinaryString((int) aux.charAt(i), 8);
+    	
+    	// 3a parte: ponteiro pai
+    	strBin += Binario.intToBinaryString(dir.getPai(), 80);
+    	
+    	// 3a parte: data de criação
+    	aux = dir.getCriacao();
+    	for (char c : aux.toCharArray()) 
+    		strBin += Binario.intToBinaryString((int) c, 8);
+    	
+    	// 4a parte: permissão
+    	aux = String.valueOf(dir.getPermissao());
+    	for (int i=0; i<3; i++) {
+    		int a = Integer.parseInt(aux.substring(i, i+1));
+    		strBin += Binario.intToBinaryString(a, 8);
+    	}
+    	
+    	// 5a parte: pastas filhas
+    	for (int i=0; i<20; i++) 
+    		if (i >= dir.getMapDir().size()) strBin += Binario.intToBinaryString(0, 80);
+    		else strBin += Binario.intToBinaryString(dir.getMapDir().get(i), 80);    	
+
+    	// 6a parte: arquivos na pasta
+    	for (int i=0; i<20; i++) 
+    		if (i >= dir.getMapFiles().size()) strBin += Binario.intToBinaryString(0, 80);
+    		else strBin += Binario.intToBinaryString(dir.getMapFiles().get(i), 80);
+    	
+    	// Final: escrever tudo na HD
+    	for (int i=0; i<512*8; i++) {
+    		boolean b = (strBin.charAt(i) == '1');
+    		this.hd.setBitDaPosicao(b, dir.getEndereco()+i);    
+    	}
+    }
+    private void desmontarArq(Arquivo arq) {    	    	
+    	// 1a parte: estado (fixo, estado sempre é 1 para dir's ativos)
+    	String strBin = Binario.intToBinaryString(arq.getEstado(), 8);
+    	
+    	// 2a parte: nome da pasta
+    	String aux = arq.getNome();
+    	for (int i=0; i<86; i++) 
+    		if (i >= aux.length()) strBin += "00000000";
+    		else strBin += Binario.intToBinaryString((int) aux.charAt(i), 8);
+    	
+    	// 3a parte: ponteiro pai
+    	strBin += Binario.intToBinaryString(arq.getPai(), 80);
+    	
+    	// 3a parte: data de criação
+    	aux = arq.getCriacao();
+    	for (char c : aux.toCharArray()) 
+    		strBin += Binario.intToBinaryString((int) c, 8);
+    	
+    	// 4a parte: permissão
+    	aux = String.valueOf(arq.getPermissao());
+    	for (int i=0; i<3; i++) {
+    		int a = Integer.parseInt(aux.substring(i, i+1));
+    		strBin += Binario.intToBinaryString(a, 8);
+    	}
+    	
+    	// 5a parte: conteúdo
+    	aux = arq.getConteudo();
+    	for (int i=0; i<400; i++) 
+    		if (i >= aux.length()) strBin += "00000000";
+    		else strBin += Binario.intToBinaryString((int) aux.charAt(i), 8);
+    	
+    	// Final: escrever tudo na HD
+    	for (int i=0; i<512*8; i++) {
+    		boolean b = (strBin.charAt(i) == '1');
+    		this.hd.setBitDaPosicao(b, arq.getEndereco()+i);    
+    	}
+    }
     
+    // Encontra o próximo bloco disponível a partir do estado
+    private int findNextSpace() {
+    	int saida = -1;
+    	
+    	for (int i=0; i<this.hd.getNumBits(); i+=512*8)
+    		if (!(this.hd.getBitDaPosicao(i+6) || this.hd.getBitDaPosicao(i+7))) return i;
+    	
+    	return saida;
+    }
+    
+    // Conta quantos blocos estão disponíveis no HD pelo seu estado salvo
+    private ArrayList<Integer> findAllFreeSpace() {
+    	ArrayList<Integer> saida = new ArrayList<Integer>();
+    	
+    	for (int i=0; i<this.hd.getNumBits(); i+=512*8)
+    		if (!(this.hd.getBitDaPosicao(i+6) || this.hd.getBitDaPosicao(i+7))) saida.add(i);
+    	
+    	return saida;
+    }
+    
+    //"Auxiliar de 'findPermit()'" Transforma um número interiro em uma string de bits de tamanho determinado
     private static int[] intToBinary(int value, int size) {
         if (value > Math.pow(2, size) - 1) {
             return null;
@@ -606,6 +1076,7 @@ public class MyKernel implements Kernel {
         return bin;
     }
     
+    //Pega os digitos da permissão (em String) e transforma na String da permissão
     private static String findPermit(String entrada) {
     	int nPerm1, nPerm2, nPerm3;
 		nPerm1 = Integer.parseInt(entrada.charAt(0)+"");
@@ -639,4 +1110,43 @@ public class MyKernel implements Kernel {
 		
 		return strPermit;
     }
+
+    //"Função recursiva" Copia um diretório e todos os seus itens
+	public Diretorio copiar(Diretorio molde, int pai, ArrayList<Integer> disponiveis) {
+		// Vai acabar o espaço do HD?
+		int vaiUsar = molde.getMapFiles().size() + molde.getMapDir().size()+1;
+		if (disponiveis.size()-vaiUsar <= 0) return null;
+		
+		int paiEnd = disponiveis.remove(0);
+		Diretorio novo = new Diretorio(pai, molde);
+		novo.setEndereco(paiEnd);
+
+		ArrayList<Arquivo> listArqs = new ArrayList<Arquivo>();
+		for (int end : molde.getMapFiles()) {
+			Arquivo original = montarArq(end);
+			int newEnd = disponiveis.remove(0);
+			Arquivo copia = new Arquivo(paiEnd, original);
+			copia.setEndereco(newEnd);
+			novo.getMapFiles().add(newEnd);
+			listArqs.add(copia);
+		}
+
+		ArrayList<Diretorio> listDirs = new ArrayList<Diretorio>();
+		for (int end : molde.getMapDir()) {
+			Diretorio original = montarDir(end);
+			int newEnd = disponiveis.remove(0);
+			Diretorio copia = copiar(original, paiEnd, disponiveis);
+			// Deu problema em uma pasta, nenhuma das anteriores pode ser escrita
+			if (copia == null) return null;
+			copia.setEndereco(newEnd);
+			novo.getMapDir().add(newEnd);
+			listDirs.add(copia);
+		}
+		
+		// Se tudo acabou sem problema, pode escrever os itens
+		for (Arquivo a : listArqs) desmontarArq(a);
+		for (Diretorio d : listDirs) desmontarDir(d);
+		
+		return novo;
+	}
 }
