@@ -55,12 +55,21 @@ public class Item {
 	public Item(String nome, int pai) {
 		this.nome = nome;
 		Date agora = new Date();
-		this.criacao = 
-				(agora.getYear()+1900)+""+
-				(agora.getMonth()+1)+""+
-				agora.getDate()+""+
-				agora.getHours()+""+
-				agora.getMinutes();
+		
+		this.criacao =  (agora.getYear()+1900)+"";
+		
+		if (agora.getMonth()+1 < 10) this.criacao += '0';
+		this.criacao += (agora.getMonth()+1);
+		
+		if (agora.getDate() < 10) this.criacao += '0';
+		this.criacao += agora.getDate();
+		
+		if (agora.getHours() < 10) this.criacao += '0';
+		this.criacao += agora.getHours();
+				
+		if (agora.getMinutes() < 10) this.criacao += '0';
+		this.criacao += agora.getMinutes();
+		
 		this.pai = pai;
 	}
 	

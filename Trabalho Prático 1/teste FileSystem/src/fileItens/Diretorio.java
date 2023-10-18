@@ -50,6 +50,7 @@ public class Diretorio extends Item {
 	
 	public Diretorio (int pai, Diretorio molde) {
 		super(molde.getNome(), pai);
+		this.setEstado(1);
 		this.setPai(this.getEndereco());
 		this.setPermissao(molde.getPermissao());
 		this.mapDir = new ArrayList<Integer>();

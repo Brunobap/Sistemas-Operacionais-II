@@ -39,91 +39,7 @@ public class MyKernel implements Kernel {
     	desmontarDir(raiz);
     }
   
-    public String rm(String parameters) {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: rm");
-        System.out.println("\tParametros: " + parameters);
-
-        //inicio da implementacao do aluno
-        this.vetComandos.add("rm "+parameters);
-        
-        boolean isDir = false;
-        if (parameters.startsWith("-R ")) {
-        	isDir = true;
-        	parameters = parameters.substring(3);
-        }
-
-        String caminho = "";
-        String strAlvo;
-        if (parameters.contains("/")) {
-        	caminho = parameters.substring(0, parameters.lastIndexOf("/"));
-        	strAlvo = parameters.substring(parameters.lastIndexOf("/")+1);
-        } else strAlvo = parameters;
-        Diretorio aux = encontrar(caminho);
-        if (aux == null) result = "rm: Diretório "+parameters+"não existe. (Nada foi removido)";
-
-		if (isDir) {
-			if (aux.getMapDir().containsKey(strAlvo)) {
-				Diretorio dirAlvo = aux.getMapDir().get(strAlvo);
-				aux.getMapDir().remove(dirAlvo.getNome());
-			} else result = "rm: Diretório "+parameters+" não existe. (Nada foi removido)";
-		} else {
-			if (aux.getMapFiles().containsKey(strAlvo)) {
-				Arquivo dirAlvo = aux.getMapFiles().get(strAlvo);
-				aux.getMapFiles().remove(dirAlvo.getNome());
-			} else result = "rm: Arquivo "+parameters+" não existe. (Nada foi removido)";
-		}
-        //fim da implementacao do aluno
-        return result;
-    }
-    /*
-    public String chmod(String parameters) {
-        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
-        String result = "";
-        System.out.println("Chamada de Sistema: chmod");
-        System.out.println("\tParametros: " + parameters);
-
-        //inicio da implementacao do aluno
-        this.vetComandos.add("chmod "+parameters);
-        boolean isDir = false;
-        if (parameters.startsWith("-R ")) {
-        	isDir = true;
-        	parameters = parameters.substring(3);
-        }
-
-        String strPermit = parameters.substring(0, 3);
-        int numPermit = Integer.parseInt(strPermit);
-        parameters = parameters.substring(4);
-        
-		String caminho = "";
-		String strAlvo;
-		if (parameters.contains("/")) {
-			caminho = parameters.substring(0,parameters.lastIndexOf("/"));
-			strAlvo = parameters.substring(parameters.lastIndexOf("/")+1);
-		} else strAlvo = parameters;
-        Diretorio aux = encontrar(caminho);
-        if (aux == null) return "chmod: Diretório "+parameters+" não existe. (Nada foi modificado)";
-
-		if (isDir) {
-			if (aux.getMapDir().containsKey(strAlvo)) {
-				Diretorio dirAlvo = aux.getMapDir().get(strAlvo);	
-				
-				for (Diretorio d: dirAlvo.getMapDir().values())
-					d.setPermissao(numPermit);
-				for (Arquivo a: dirAlvo.getMapFiles().values())
-					a.setPermissao(numPermit);
-					
-			} else result = "chmod: Diretório "+parameters+" não existe. (Nada foi modificado)";
-		} else {
-			if (aux.getMapFiles().containsKey(strAlvo)) {
-				Arquivo target = aux.getMapFiles().get(strAlvo);
-				target.setPermissao(numPermit);
-			} else result = "chmod: Arquivo "+parameters+" não existe. (Nada foi modificado)";
-		}
-        //fim da implementacao do aluno
-        return result;
-    }
+    
     public String mv(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -148,10 +64,10 @@ public class MyKernel implements Kernel {
         	tgtDst = paramSplit[1].substring(paramSplit[1].lastIndexOf("/")+1);
         } else tgtDst = paramSplit[1];
 		
-		Diretorio aux1 = encontrar(camOri);
+		Diretorio aux1 = findDir(camOri);
 		if (aux1 == null) return "mv: Arquivo/Diretório não existe.";
 
-		Diretorio aux2 = encontrar(camDst);
+		Diretorio aux2 = findDir(camDst);
 		if (aux2 == null) return "mv: Arquivo/Diretório não existe.";
 			
 		// Pastas  iguais, renomear
@@ -185,6 +101,7 @@ public class MyKernel implements Kernel {
         //fim da implementacao do aluno
         return result;
     }
+    /*
     public String cp(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -268,7 +185,7 @@ public class MyKernel implements Kernel {
         return result;
     }
     */
-    // Concluídas 9/13
+    // Concluídas 11/13
     public String mkdir(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -296,30 +213,33 @@ public class MyKernel implements Kernel {
     		// Buscar e criar as pastas
     		for (; i<caminho.length; i++) {
     			if (caminho[i].length() > 86) return "mkdir: Nome de diretório inválido, tamanho exagerado.";
+    			Diretorio temp = aux;
     			for (int a : aux.getMapDir()) {
     				String nome = this.findNome(a);
-    				if (nome.equals(caminho[i])) {
+    				if (nome.equals(caminho[i]+'\0')) {
     					aux = montarDir(a);
     					break;
     				} 
     			}
 
-    			if (aux.getMapDir().contains(aux.getEndereco())) result = "mkdir: "+parameters+": Diretorio ja existe (Nenhum diretorio foi criado)";
-    			else if (caminho[i].equals("..")) {
-    				Diretorio pai = montarDir(aux.getPai());
-    				aux = pai;
-    			} else if (!caminho[i].equals(".")) {		
-	    			// Não achou a pasta, criar uma nova
-    				int newEnd = this.findNextSpace();
-    				if (newEnd<0) return "mkdir: Espaco de HD insuficiente. (Não foi criado o diretório '"+caminho[i]+"', e consequentes)";
-    				Diretorio newDir = new Diretorio(aux.getEndereco(), caminho[i]);
-    				newDir.setEndereco(newEnd);
-    				aux.getMapDir().add(newEnd);
-    				desmontarDir(aux);
-    				desmontarDir(newDir);
-    				aux = newDir;
-    				result = "";
-				}
+    			if (aux != temp) result = "mkdir: "+parameters+": Diretorio ja existe (Nenhum diretorio foi criado)";
+    			else {
+	    			if (caminho[i].equals("..")) {
+	    				Diretorio pai = montarDir(aux.getPai());
+	    				aux = pai;
+	    			} else if (!caminho[i].equals(".")) {		
+		    			// Não achou a pasta, criar uma nova
+	    				int newEnd = this.findNextSpace();
+	    				if (newEnd<0) return "mkdir: Espaco de HD insuficiente. (Não foi criado o diretório '"+caminho[i]+"', e consequentes)";
+	    				Diretorio newDir = new Diretorio(aux.getEndereco(), caminho[i]);
+	    				newDir.setEndereco(newEnd);
+	    				aux.getMapDir().add(newEnd);
+	    				desmontarDir(aux);
+	    				desmontarDir(newDir);
+	    				aux = newDir;
+	    				result = "";
+					}
+    			}
     		}    		
     	}        	
         //fim da implementacao do aluno
@@ -353,7 +273,7 @@ public class MyKernel implements Kernel {
         	for (int end : aux.getMapDir()) {
         		d = montarDir(end);
         		result += 
-        			d.getPermissao()+" "+
+        			'd'+findPermit(String.valueOf(d.getPermissao()))+" "+
         			d.getCriacao()+" "+
         			d.getNome()+"\n";
         	}
@@ -361,9 +281,9 @@ public class MyKernel implements Kernel {
         	for (int end : aux.getMapFiles()) {
         		a = montarArq(end);
         		result += 
-    			a.getPermissao()+" "+
-    			a.getCriacao()+" "+
-    			a.getNome()+"\n";
+	        		'-'+findPermit(String.valueOf(a.getPermissao()))+" "+
+	    			a.getCriacao()+" "+
+	    			a.getNome()+"\n";
         	}
         } else {
         	Diretorio d;
@@ -497,7 +417,11 @@ public class MyKernel implements Kernel {
 		if (aux == null) return "rmdir: Diretório "+parameters+"não existe. (Nada foi removido)";
 		
 		Diretorio dirAlvo = null;
-		for (int end : aux.getMapDir()) if (findNome(end).equals(strAlvo+'\0')) dirAlvo = montarDir(end);
+		for (int end : aux.getMapDir()) 
+			if (findNome(end).equals(strAlvo+'\0')) {
+				dirAlvo = montarDir(end);
+				break;
+			}
 		if (dirAlvo != null) {
 			if (dirAlvo.getMapDir().isEmpty() && dirAlvo.getMapFiles().isEmpty()) {
 				aux.getMapDir().remove(aux.getMapDir().indexOf(dirAlvo.getEndereco()));
@@ -507,6 +431,138 @@ public class MyKernel implements Kernel {
 			} else result = "rmdir: Diretório "+parameters+" possui arquivos e/ou diretórios. (Nada foi removido)";
 		} else result = "rmdir: Diretório "+parameters+" não existe. (Nada foi removido)";
 		
+        //fim da implementacao do aluno
+        return result;
+    }
+    public String rm(String parameters) {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: rm");
+        System.out.println("\tParametros: " + parameters);
+
+        //inicio da implementacao do aluno
+        this.vetComandos.add("rm "+parameters);
+        
+        boolean isDir = false;
+        if (parameters.startsWith("-R ")) {
+        	isDir = true;
+        	parameters = parameters.substring(3);
+        }
+
+        String caminho = "";
+        String strAlvo;
+        if (parameters.contains("/")) {
+        	caminho = parameters.substring(0, parameters.lastIndexOf("/"));
+        	strAlvo = parameters.substring(parameters.lastIndexOf("/")+1);
+        } else strAlvo = parameters;
+        Diretorio aux = findDir(caminho);
+        if (aux == null) result = "rm: Diretório "+parameters+"não existe. (Nada foi removido)";
+
+		if (isDir) {
+			Diretorio dirAlvo = null;
+			for (int end : aux.getMapDir()) 
+				if (findNome(end).equals(strAlvo+'\0')) {
+					dirAlvo = montarDir(end);
+					break;
+				}
+			if (dirAlvo != null) {
+				int index = aux.getMapDir().indexOf(dirAlvo.getEndereco());
+				aux.getMapDir().remove(index);
+				dirAlvo.setEstado(0);
+				// Apagar todos os arquivos
+				for (int end : dirAlvo.getMapFiles()) {
+					Arquivo a = montarArq(end);
+					a.setEstado(0);
+					desmontarArq(a);
+				}
+				// Apagar todas as pastas
+				for (int end : dirAlvo.getMapDir()) {
+					String nome = findNome(end);
+					nome = nome.substring(0,nome.length());
+					this.rm("-R "+caminho+"/"+nome);
+				}
+				desmontarDir(dirAlvo);
+				desmontarDir(aux);
+			} else result = "rm: Diretório "+parameters+" não existe. (Nada foi removido)";
+		} else {
+			Arquivo arqAlvo = null;
+			for (int end : aux.getMapFiles()) 
+				if (findNome(end).equals(strAlvo+'\0')) {
+					arqAlvo = montarArq(end);
+					break;
+				}
+			if (arqAlvo != null) {
+				int index = aux.getMapFiles().indexOf(arqAlvo.getEndereco());
+				aux.getMapFiles().remove(index);
+				arqAlvo.setEstado(0);
+				desmontarArq(arqAlvo);
+				desmontarDir(aux);
+			} else result = "rm: Arquivo "+parameters+" não existe. (Nada foi removido)";
+		}
+        //fim da implementacao do aluno
+        return result;
+    }
+    public String chmod(String parameters) {
+        //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
+        String result = "";
+        System.out.println("Chamada de Sistema: chmod");
+        System.out.println("\tParametros: " + parameters);
+
+        //inicio da implementacao do aluno
+        this.vetComandos.add("chmod "+parameters);
+        boolean isDir = false;
+        if (parameters.startsWith("-R ")) {
+        	isDir = true;
+        	parameters = parameters.substring(3);
+        }
+
+        String strPermit = parameters.substring(0, 3);
+        int numPermit = Integer.parseInt(strPermit);
+        parameters = parameters.substring(4);
+        
+		String caminho = "";
+		String strAlvo;
+		if (parameters.contains("/")) {
+			caminho = parameters.substring(0,parameters.lastIndexOf("/"));
+			strAlvo = parameters.substring(parameters.lastIndexOf("/")+1);
+		} else strAlvo = parameters;
+        Diretorio aux = findDir(caminho);
+        if (aux == null) return "chmod: Diretório "+parameters+" não existe. (Nada foi modificado)";
+
+		if (isDir) {
+			Diretorio dirAlvo = null;
+			for (int end : aux.getMapDir())
+				if (findNome(end).equals(strAlvo+'\0')) {
+					dirAlvo = montarDir(end);
+					break;
+				}
+			if (dirAlvo != null) {				
+				for (int end : dirAlvo.getMapDir()) {
+					Diretorio d = montarDir(end);
+					d.setPermissao(numPermit);
+					desmontarDir(d);
+				}
+				for (int end: dirAlvo.getMapFiles()) {
+					Arquivo a = montarArq(end);
+					a.setPermissao(numPermit);
+					desmontarArq(a);
+				}
+				dirAlvo.setPermissao(numPermit);
+				desmontarDir(dirAlvo);
+					
+			} else result = "chmod: Diretório "+parameters+" não existe. (Nada foi modificado)";
+		} else {
+			Arquivo arqAlvo = null;
+			for (int end : aux.getMapFiles())
+				if (findNome(end).equals(strAlvo+'\0')) {
+					arqAlvo = montarArq(end);
+					break;
+				}
+			if (arqAlvo != null) {
+				arqAlvo.setPermissao(numPermit);
+				desmontarArq(arqAlvo);
+			} else result = "chmod: Arquivo "+parameters+" não existe. (Nada foi modificado)";
+		}
         //fim da implementacao do aluno
         return result;
     }
@@ -580,9 +636,7 @@ public class MyKernel implements Kernel {
           
     
     // FUNÇÕES UTITLITARIAS:
-    /* 
-     * Encontrar uma pasta na HD, e devolve-la montada
-     */
+    //Encontrar uma pasta na HD, e devolve-la montada
     private Diretorio findDir(String parameters) {
     	if (parameters.isEmpty() || parameters.equals(" ")) return montarDir(this.atual);
     	
@@ -638,10 +692,7 @@ public class MyKernel implements Kernel {
 		return aux;
     }
     
-    /*
-     * Encontra o nome de um item salvo no endereço passado
-     */
-    // Encontrar o nome do diretório/arquivo no endereço especificado
+    // Encontra o nome de um item salvo no endereço passado
     private String findNome(int end) {
     	
     	String raw = "";
@@ -659,10 +710,7 @@ public class MyKernel implements Kernel {
     	return nome;
     }
     
-    /*
-     * Executa automaticamente as funções do kernel de acordo com uma entrada de texto
-     */
-    // Mecanismo da execução do batch
+    //Executa automaticamente as funções do kernel de acordo com uma entrada de texto
     private String executar(String linha) {
     	String[] info = linha.split(" ",2);
     	switch (info[0]) {
@@ -683,10 +731,7 @@ public class MyKernel implements Kernel {
 		}
     }
     
-    /*
-     * "Funções gemeas", pegam informações do HD e constroem estruturas legíveis
-     */
-    // Procurar informações na HD e montar estrutras
+    //"Funções gêmeas", pegam informações do HD e constroem estruturas legíveis
     private Diretorio montarDir(int endereco) {
     	String dirRaw = "";
     	for (int i=0; i<tamBloco; i++)
@@ -790,10 +835,7 @@ public class MyKernel implements Kernel {
     	return new Arquivo(estado, endereco, nome, pai, data, permit, conteudo);
     }
 
-    /*
-     * "Funções gemeas", pegam estruturas prontas e escrevem no HD
-     */
-    // Receber estruturas prontas e escrever no HD
+    // "Funções gêmeas", pegam estruturas prontas e escrevem no HD
     private void desmontarDir(Diretorio dir) {    	    	
     	// 1a parte: estado (fixo, estado sempre é 1 para dir's ativos)
     	String strBin = Binario.intToBinaryString(dir.getEstado(), 8);
@@ -873,10 +915,7 @@ public class MyKernel implements Kernel {
     	}
     }
     
-    /*
-     * Encontra o próximo bloco disponível a partir do estado salvo nele (1º byte)
-     */
-    // Encontrar a próxima posição livre na hd
+    // Encontra o próximo bloco disponível a partir do estado salvo nele (1º byte)
     private int findNextSpace() {
     	int saida = -1;
     	
@@ -886,6 +925,7 @@ public class MyKernel implements Kernel {
     	return saida;
     }
     
+    //"Auxiliar de 'findPermit()'" Transforma um número interiro em uma string de bits de tamanho determinado
     private static int[] intToBinary(int value, int size) {
         if (value > Math.pow(2, size) - 1) {
             return null;
@@ -906,6 +946,7 @@ public class MyKernel implements Kernel {
         return bin;
     }
     
+    //Pega os digitos da permissão (em String) e transforma na String da permissão
     private static String findPermit(String entrada) {
     	int nPerm1, nPerm2, nPerm3;
 		nPerm1 = Integer.parseInt(entrada.charAt(0)+"");
@@ -942,16 +983,6 @@ public class MyKernel implements Kernel {
 
 	@Override
 	public String cp(String parameters) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
-	public String mv(String parameters) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
-	public String chmod(String parameters) {
 		// TODO Auto-generated method stub
 		return null;
 	}
