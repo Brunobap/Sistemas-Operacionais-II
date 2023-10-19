@@ -55,9 +55,13 @@ public class MyKernel implements Kernel {
     		if (parameters.startsWith("../")) {
     			aux = montarDir(this.atual);
     			aux = montarDir(aux.getPai());
-    		} else if (parameters.startsWith("./")) aux = montarDir(this.atual);
-    		else {
-    			if (!parameters.startsWith("/")) i = 0;
+    		} 
+    		else if (parameters.startsWith("./")) aux = montarDir(this.atual);
+    		else if (!parameters.startsWith("/")) {
+    			i = 0;
+    			aux = montarDir(this.atual);
+    		} else {
+    			i = 0;
     			aux = montarDir(0);
     		}
     		    		
@@ -166,7 +170,13 @@ public class MyKernel implements Kernel {
         //indique o diretório atual. Por exemplo... /
         currentDir = operatingSystem.fileSystem.FileSytemSimulator.currentDir;
         
-        if (!(parameters.startsWith("../") || parameters.startsWith("./") || parameters.startsWith("/"))) parameters = "./"+parameters;
+        //Caso mais básico, voltar a raíz
+        if (parameters.equals("/")) {
+        	operatingSystem.fileSystem.FileSytemSimulator.currentDir = "/";
+        	this.atual = 0;
+        	return result;
+        }
+        
         Diretorio aux = findDir(parameters);
         if (aux == null) return "cd: Diretório não foi encontrado.";
 		this.atual = aux.getEndereco();
@@ -190,7 +200,7 @@ public class MyKernel implements Kernel {
 
         //inicio da implementacao do aluno
         this.vetComandos.add("createfile "+parameters);
-        
+                
         String strCam = parameters.substring(0,parameters.indexOf(" "));
         String caminho = "";
         String nome;
@@ -769,10 +779,10 @@ public class MyKernel implements Kernel {
         	aux = montarDir(this.atual);
         } else if (!parameters.startsWith("/")) {
 			i = 0;
-			aux = montarDir(0);
+			aux = montarDir(this.atual);
 		} else {
 			i = 0;
-			aux = montarDir(this.atual);
+			aux = montarDir(0);
 		}
         
         String[] caminho = parameters.split("/");
