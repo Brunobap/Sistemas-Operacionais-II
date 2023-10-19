@@ -61,16 +61,16 @@ public class MyKernel implements Kernel {
     			i = 0;
     			aux = montarDir(this.atual);
     		} else {
-    			i = 0;
+    			i = 1;
     			aux = montarDir(0);
     		}
     		    		
     		String[] caminho = parameters.split("/");
-    		if (caminho[caminho.length-1].contains(".") || caminho[caminho.length-1].contains(" ")) return "mkdir: Nome de diretório inválido. (Nada foi criado)";
+    		for (int j=i; j<caminho.length; j++)
+    			if (caminho[j].contains(".") || caminho[j].contains(" ") || caminho[j].length() > 86) return "mkdir: Nome de diretório inválido. (Nada foi criado)";
     		
     		// Buscar e criar as pastas
     		for (; i<caminho.length; i++) {
-    			if (caminho[i].length() > 86) return "mkdir: Nome de diretório inválido, tamanho exagerado.";
     			Diretorio temp = aux;
     			for (int a : aux.getMapDir()) {
     				String nome = this.findNome(a);
@@ -182,11 +182,14 @@ public class MyKernel implements Kernel {
 		this.atual = aux.getEndereco();
 
         //setando parte gráfica do diretorio atual	
-		String[] caminho = parameters.split("/");
-		for (String s : caminho)
-			if (s.equals("..")) {
-				if (!currentDir.equals("/")) currentDir = currentDir.substring(0, currentDir.indexOf("/",caminho.length-1)+1);
-			} else if (!s.equals(".")) currentDir += s+"/";
+		if (aux.getEndereco() == 0) currentDir = "/";
+		else {
+			String[] caminho = parameters.split("/");
+			for (String s : caminho)
+				if (s.equals("..")) {
+					if (!currentDir.equals("/")) currentDir = currentDir.substring(0, currentDir.indexOf("/",caminho.length-1)+1);
+				} else if (!s.equals(".") && !s.equals("")) currentDir += s+"/";
+		}
         operatingSystem.fileSystem.FileSytemSimulator.currentDir = currentDir;
 
         //fim da implementacao do aluno
@@ -214,7 +217,7 @@ public class MyKernel implements Kernel {
         String texto = parameters.substring(parameters.indexOf(" ")+1);
         
         for (int end : aux.getMapFiles()) if (findNome(end).equals(nome)) return "createfile: Arquivo já existe. Não foi posível criá-lo.";
-		if ((nome.contains(" ") || nome.contains("/")) && !nome.contains(".") || nome.length()>86) return "createfile: Nome de arquivo inválido. (Nada foi criado)";
+		if ((nome.contains(" ") || nome.contains("/")) || !nome.contains(".") || nome.length()>86) return "createfile: Nome de arquivo inválido. (Nada foi criado)";
 		
 		String conteudo = texto.replaceAll("\\\\n", "\n");
 		if (conteudo.length()>400) return "createfile: Conteúdo excessivo, limite de 400 caracteres. (Nada foi criado)";
@@ -324,8 +327,7 @@ public class MyKernel implements Kernel {
         Diretorio aux = findDir(caminho);
         if (aux == null) result = "rm: Diretório "+parameters+"não existe. (Nada foi removido)";
 
-		if (isDir) {
-			if (aux.getEndereco() == 0) return "rm: Não é possível remover o diretório raíz. (Nada foi removido)";
+		if (isDir) {			
 			Diretorio dirAlvo = null;
 			for (int end : aux.getMapDir()) 
 				if (findNome(end).equals(strAlvo+'\0')) {
@@ -333,6 +335,7 @@ public class MyKernel implements Kernel {
 					break;
 				}
 			if (dirAlvo != null) {
+				if (dirAlvo.getEndereco() == 0) return "rm: Não é possível remover o diretório raíz. (Nada foi removido)";
 				int index = aux.getMapDir().indexOf(dirAlvo.getEndereco());
 				aux.getMapDir().remove(index);
 				dirAlvo.setEstado(0);
@@ -781,7 +784,7 @@ public class MyKernel implements Kernel {
 			i = 0;
 			aux = montarDir(this.atual);
 		} else {
-			i = 0;
+			i = 1;
 			aux = montarDir(0);
 		}
         
