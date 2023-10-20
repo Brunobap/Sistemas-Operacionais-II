@@ -381,7 +381,7 @@ public class MyKernel implements Kernel {
         //inicio da implementacao do aluno
         this.vetComandos.add("chmod "+parameters);
         boolean isDir = false;
-        if (parameters.startsWith("-R ")) {
+        if (parameters.startsWith("-R ") || parameters.startsWith("-r ")) {
         	isDir = true;
         	parameters = parameters.substring(3);
         }
@@ -989,6 +989,7 @@ public class MyKernel implements Kernel {
     	
     	// 4a parte: permissão
     	aux = String.valueOf(dir.getPermissao());
+    	while (aux.length() < 3) aux = '0'+aux;
     	for (int i=0; i<3; i++) {
     		int a = Integer.parseInt(aux.substring(i, i+1));
     		strBin += Binario.intToBinaryString(a, 8);
@@ -1030,6 +1031,7 @@ public class MyKernel implements Kernel {
     	
     	// 4a parte: permissão
     	aux = String.valueOf(arq.getPermissao());
+    	while (aux.length() < 3) aux = '0'+aux;
     	for (int i=0; i<3; i++) {
     		int a = Integer.parseInt(aux.substring(i, i+1));
     		strBin += Binario.intToBinaryString(a, 8);
@@ -1091,6 +1093,8 @@ public class MyKernel implements Kernel {
     
     //Pega os digitos da permissão (em String) e transforma na String da permissão
     private static String findPermit(String entrada) {
+    	while (entrada.length() < 3) entrada = '0'+entrada;
+    	
     	int nPerm1, nPerm2, nPerm3;
 		nPerm1 = Integer.parseInt(entrada.charAt(0)+"");
 		nPerm2 = Integer.parseInt(entrada.charAt(1)+"");
