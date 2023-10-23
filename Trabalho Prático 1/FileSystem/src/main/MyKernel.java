@@ -9,6 +9,7 @@ import java.util.Scanner;
 import binary.Binario;
 import fileItens.Arquivo;
 import fileItens.Diretorio;
+import fileItens.Item;
 import hardware.HardDisk;
 /*
  * To change this template, choose Tools | Templates
@@ -39,7 +40,6 @@ public class MyKernel implements Kernel {
     	desmontarDir(raiz);
     }
   
-    // Concluídas 13/13 :^)
     public String mkdir(String parameters) {
         //variavel result deverah conter o que vai ser impresso na tela apos comando do usuário
         String result = "";
@@ -67,7 +67,11 @@ public class MyKernel implements Kernel {
     		    		
     		String[] caminho = parameters.split("/");
     		for (int j=i; j<caminho.length; j++)
-    			if (caminho[j].contains(".") || caminho[j].contains(" ") || caminho[j].length() > 86) return "mkdir: Nome de diretório inválido. (Nada foi criado)";
+    			if (
+    				(!caminho[j].equals("..") && !caminho[j].equals(".") && caminho[j].contains(".")) ||
+    				caminho[j].contains(" ") ||
+    				caminho[j].length() > 86) 
+    				return "mkdir: Nome de diretório inválido. (Nada foi criado)";
     		
     		// Buscar e criar as pastas
     		for (; i<caminho.length; i++) {
@@ -144,15 +148,14 @@ public class MyKernel implements Kernel {
 	    			a.getNome()+"\n";
         	}
         } else {
-        	Diretorio d;
+        	String nome;
         	for (int end : aux.getMapDir()) {
-        		d = montarDir(end);
-        		result += d.getNome()+" ";        		
+        		nome = findNome(end);
+        		result += nome.substring(0,nome.length()-1)+" ";
         	}
-        	Arquivo a;
         	for (int end : aux.getMapFiles()) {
-        		a = montarArq(end);
-        		result += a.getNome()+" ";
+        		nome = findNome(end);
+        		result += nome.substring(0,nome.length()-1)+" ";
         	}
         } 
         //fim da implementacao do aluno
@@ -572,7 +575,7 @@ public class MyKernel implements Kernel {
         //inicio da implementacao do aluno
         this.vetComandos.add("cp "+parameters);
         boolean isDir = false;
-        if (parameters.startsWith("-R ")) {
+        if (parameters.startsWith("-R ") || parameters.startsWith("-r ")) {
         	isDir = true;
         	parameters = parameters.substring(3);
         }
@@ -615,10 +618,12 @@ public class MyKernel implements Kernel {
 				if (d != null) {
 					ArrayList<Integer> livre = findAllFreeSpace();
 					if (livre.size() == 0) return "cp: Não há espaço suficiente no HD para copiar o diretório. (Nada foi copiado)";
-					Diretorio copia = copiar(d, aux2.getEndereco(), livre);
-					if (copia == null) return "cp: Não há espaço suficiente no HD para copiar o diretório. (Nada foi copiado)";
-					aux2.getMapDir().add(copia.getEndereco());
-					desmontarDir(copia);
+					ArrayList<Item> copias = copiar(d, aux2.getEndereco(), livre);
+					if (copias == null) return "cp: Não há espaço suficiente no HD para copiar o diretório. (Nada foi copiado)";
+					else for (Item i : copias)
+						if (i.getClass().equals(Diretorio.class)) desmontarDir((Diretorio) i);
+						else desmontarArq((Arquivo) i);
+					aux2.getMapDir().add(copias.get(0).getEndereco());
 					desmontarDir(aux2);
 				}
 				
@@ -662,11 +667,15 @@ public class MyKernel implements Kernel {
 				if (copiado != null) {
 					ArrayList<Integer> livre = findAllFreeSpace();
 					if (livre.size() == 0) return "cp: Não há espaço suficiente no HD para copiar o diretório. (Nada foi copiado)";
-					Diretorio copia = copiar(copiado, aux2.getEndereco(), livre);
-					if (copia == null) return "cp: Não há espaço suficiente no HD para copiar o diretório. (Nada foi copiado)";
-					copia.setNome(tgtDst);
-					aux2.getMapDir().add(copia.getEndereco());
-					desmontarDir(copia);
+					ArrayList<Item> copias = copiar(copiado, aux2.getEndereco(), livre);
+					if (copias == null) return "cp: Não há espaço suficiente no HD para copiar o diretório. (Nada foi copiado)";					
+					else {
+						copias.get(0).setNome(tgtDst);
+						for (Item i : copias)
+							if (i.getClass().equals(Diretorio.class)) desmontarDir((Diretorio) i);
+							else desmontarArq((Arquivo) i);
+					}						
+					aux2.getMapDir().add(copias.get(0).getEndereco());
 					desmontarDir(aux2);
 				}
 				
@@ -1129,41 +1138,45 @@ public class MyKernel implements Kernel {
     }
 
     //"Função recursiva" Copia um diretório e todos os seus itens
-	public Diretorio copiar(Diretorio molde, int pai, ArrayList<Integer> disponiveis) {
+	public ArrayList<Item> copiar(Diretorio molde, int pai, ArrayList<Integer> disponiveis) {
 		// Vai acabar o espaço do HD?
 		int vaiUsar = molde.getMapFiles().size() + molde.getMapDir().size()+1;
 		if (disponiveis.size()-vaiUsar <= 0) return null;
 		
+		ArrayList<Item> itens = new ArrayList<Item>();
+		
 		int paiEnd = disponiveis.remove(0);
 		Diretorio novo = new Diretorio(pai, molde);
 		novo.setEndereco(paiEnd);
+		itens.add(novo);
 
-		ArrayList<Arquivo> listArqs = new ArrayList<Arquivo>();
 		for (int end : molde.getMapFiles()) {
 			Arquivo original = montarArq(end);
 			int newEnd = disponiveis.remove(0);
 			Arquivo copia = new Arquivo(paiEnd, original);
 			copia.setEndereco(newEnd);
 			novo.getMapFiles().add(newEnd);
-			listArqs.add(copia);
+			itens.add(copia);
 		}
-
-		ArrayList<Diretorio> listDirs = new ArrayList<Diretorio>();
+		
 		for (int end : molde.getMapDir()) {
 			Diretorio original = montarDir(end);
 			int newEnd = disponiveis.remove(0);
-			Diretorio copia = copiar(original, paiEnd, disponiveis);
+			Diretorio copia = new Diretorio(paiEnd, original);
+			ArrayList<Item> contCopia = copiar(original, paiEnd, disponiveis);
 			// Deu problema em uma pasta, nenhuma das anteriores pode ser escrita
-			if (copia == null) return null;
+			if (contCopia == null) return null;
+			else for (int n=0; n<40 && n<contCopia.size()-1; n++) {
+				Item i = contCopia.get(n);
+				if (i.getPai()==paiEnd)
+					if (i.getClass().equals(Diretorio.class)) copia.getMapDir().add(i.getEndereco());
+					else copia.getMapFiles().add(i.getEndereco());
+				}
 			copia.setEndereco(newEnd);
 			novo.getMapDir().add(newEnd);
-			listDirs.add(copia);
+			itens.addAll(contCopia);
 		}
-		
-		// Se tudo acabou sem problema, pode escrever os itens
-		for (Arquivo a : listArqs) desmontarArq(a);
-		for (Diretorio d : listDirs) desmontarDir(d);
-		
-		return novo;
+
+		return itens;
 	}
 }
