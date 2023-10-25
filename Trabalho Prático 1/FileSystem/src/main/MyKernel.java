@@ -382,6 +382,7 @@ public class MyKernel implements Kernel {
         System.out.println("\tParametros: " + parameters);
 
         //inicio da implementacao do aluno
+        String paramOrigi = parameters;
         this.vetComandos.add("chmod "+parameters);
         boolean isDir = false;
         if (parameters.startsWith("-R ") || parameters.startsWith("-r ")) {
@@ -411,9 +412,9 @@ public class MyKernel implements Kernel {
 				}
 			if (dirAlvo != null) {				
 				for (int end : dirAlvo.getMapDir()) {
-					Diretorio d = montarDir(end);
-					d.setPermissao(numPermit);
-					desmontarDir(d);
+					String nome = findNome(end);
+					nome = nome.substring(0, nome.length()-1);
+					chmod(paramOrigi+"/"+nome);
 				}
 				for (int end: dirAlvo.getMapFiles()) {
 					Arquivo a = montarArq(end);
@@ -769,7 +770,6 @@ public class MyKernel implements Kernel {
             result += "Comandos foram executados.";
             	
 		} catch (Exception e) {
-			System.err.println(e);
 			result += "Arquivo não existe.";
 		}
         //fim da implementacao do aluno
@@ -1161,7 +1161,6 @@ public class MyKernel implements Kernel {
 		
 		for (int end : molde.getMapDir()) {
 			Diretorio original = montarDir(end);
-			int newEnd = disponiveis.remove(0);
 			Diretorio copia = new Diretorio(paiEnd, original);
 			ArrayList<Item> contCopia = copiar(original, paiEnd, disponiveis);
 			// Deu problema em uma pasta, nenhuma das anteriores pode ser escrita
@@ -1172,8 +1171,7 @@ public class MyKernel implements Kernel {
 					if (i.getClass().equals(Diretorio.class)) copia.getMapDir().add(i.getEndereco());
 					else copia.getMapFiles().add(i.getEndereco());
 				}
-			copia.setEndereco(newEnd);
-			novo.getMapDir().add(newEnd);
+			novo.getMapDir().add(contCopia.get(0).getEndereco());
 			itens.addAll(contCopia);
 		}
 
