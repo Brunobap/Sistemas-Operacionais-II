@@ -1,0 +1,73 @@
+rm -R /
+rm -R ../
+rm -R ./
+mkdir pasta00
+mkdir pasta01
+mkdir pasta02
+mkdir pasta03
+mkdir pasta04
+mkdir pasta05
+mkdir pasta06
+mkdir pasta07
+mkdir pasta08
+mkdir pasta09
+mkdir pasta10
+mkdir pasta11
+mkdir pasta12
+mkdir pasta13
+mkdir pasta14
+mkdir pasta15
+mkdir pasta16
+mkdir pasta17
+mkdir pasta18
+mkdir pasta19
+createfile ././.././././pasta00/arquivo00.txt Testado criacao do arquivo\nna pasta00
+createfile ././.././././pasta01/arquivo01.txt Testado criacao do arquivo\nna pasta01
+createfile ././.././././pasta02/arquivo02.txt Testado criacao do arquivo\nna pasta02
+createfile ././.././././pasta03/arquivo03.txt Testado criacao do arquivo\nna pasta03
+createfile ././.././././pasta04/arquivo04.txt Testado criacao do arquivo\nna pasta04
+createfile ././.././././pasta05/arquivo05.txt Testado criacao do arquivo\nna pasta05
+createfile ././.././././pasta06/arquivo06.txt Testado criacao do arquivo\nna pasta06
+createfile ././.././././pasta07/arquivo07.txt Testado criacao do arquivo\nna pasta07
+createfile ././.././././pasta08/arquivo08.txt Testado criacao do arquivo\nna pasta08
+createfile ././.././././pasta09/arquivo09.txt Testado criacao do arquivo\nna pasta09
+createfile ././.././././pasta10/arquivo10.txt Testado criacao do arquivo\nna pasta10
+createfile ././.././././pasta11/arquivo11.txt Testado criacao do arquivo\nna pasta11
+createfile ././.././././pasta12/arquivo12.txt Testado criacao do arquivo\nna pasta12
+createfile ././.././././pasta13/arquivo13.txt Testado criacao do arquivo\nna pasta13
+createfile ././.././././pasta14/arquivo14.txt Testado criacao do arquivo\nna pasta14
+createfile ././.././././pasta15/arquivo15.txt Testado criacao do arquivo\nna pasta15
+createfile ././.././././pasta16/arquivo16.txt Testado criacao do arquivo\nna pasta16
+createfile ././.././././pasta17/arquivo17.txt Testado criacao do arquivo\nna pasta17
+createfile ././.././././pasta18/arquivo18.txt Testado criacao do arquivo\nna pasta18
+createfile ././.././././pasta19/arquivo19.txt Testado criacao do arquivo\nna pasta19
+chmod 775 ./pasta00/arquivo00.txt
+rm -R pasta01
+chmod 775 ./pasta02/arquivo02.txt
+rm -R pasta03
+chmod 775 ./pasta04/arquivo04.txt
+rm -R pasta05
+chmod 775 ./pasta06/arquivo06.txt
+rm -R pasta07
+chmod 775 ./pasta08/arquivo08.txt
+rm -R pasta09
+chmod 775 ./pasta10/arquivo10.txt
+rm -R pasta11
+chmod 775 ./pasta12/arquivo12.txt
+rm -R pasta13
+chmod 775 ./pasta14/arquivo14.txt
+rm -R pasta15
+chmod 775 ./pasta16/arquivo16.txt
+rm -R pasta17
+chmod 775 ./pasta18/arquivo18.txt
+rm -R pasta19
+dump c:\dump.txt
+
+
+
+
+
+
+
+
+
