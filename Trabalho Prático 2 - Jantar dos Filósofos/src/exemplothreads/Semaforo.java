@@ -13,7 +13,7 @@ public class Semaforo {
 
     private int num;
 
-    public Semaforo(int numMaxThreads) {
+	public Semaforo(int numMaxThreads) {
         this.num = numMaxThreads;
     }
 
