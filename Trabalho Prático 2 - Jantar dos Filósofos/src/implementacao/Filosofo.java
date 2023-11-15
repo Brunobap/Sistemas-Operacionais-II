@@ -10,12 +10,12 @@ public class Filosofo extends Thread {
 
 	private int idThread;
 	private Semaforo semaforo;
-	private long m1, m2, pensou, comeu;
+	private long m1, m2, pensou, comeu, espera;
     
     public Filosofo (int idThread, Semaforo sem){   
         this.idThread = idThread;
         this.semaforo = sem;    
-        this.m1 = System.nanoTime();
+        this.m1 = System.currentTimeMillis();
     }
     
     @Override
@@ -29,16 +29,18 @@ public class Filosofo extends Thread {
         	semaforo.down();  	        	
         	
         	// faz o que tem que fazer, ...
-        	this.m1 = System.nanoTime();
-        	this.pensou = (m1-m2)/1000000;
+        	this.m1 = System.currentTimeMillis();
+        	this.espera = (m1-m2);
         	this.m2 = this.m1;
-        	this.comeu = rand.nextLong(1000, 5000);
+        	this.comeu = rand.nextLong(100, 500);
+        	this.pensou = rand.nextLong(100, 500);
         	try {
+        		sleep(this.pensou);
         		sleep(this.comeu);
         	} catch (Exception e) {
 				// TODO: handle exception
 			}
-        	System.out.println("Filosofo "+this.idThread+" pensou por "+this.pensou+" milisegundos.");
+        	System.out.println("Filosofo "+this.idThread+" esperou por "+espera+" ms, pensou por "+pensou+" ms, comeu por "+this.comeu+" ms.");
         	
         	// e libera a área de concorrência
         	semaforo.up();
