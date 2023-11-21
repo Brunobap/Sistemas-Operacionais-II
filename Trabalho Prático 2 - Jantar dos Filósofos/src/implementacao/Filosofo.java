@@ -9,12 +9,14 @@ import exemplothreads.Semaforo;
 public class Filosofo extends Thread {
 
 	private int idThread;
+	private boolean taComendo;
 	private Semaforo semaforo;
 	private long m1, m2, pensou, comeu, espera;
     
     public Filosofo (int idThread, Semaforo sem){   
         this.idThread = idThread;
-        this.semaforo = sem;    
+        this.semaforo = sem;  
+        this.taComendo = false;
         this.m1 = System.currentTimeMillis();
     }
     
@@ -26,7 +28,8 @@ public class Filosofo extends Thread {
     	// Repetir para sempre
     	while (true) {    		
         	// Pede permissão, ...
-        	semaforo.down();  	        	
+        	semaforo.down();  	      
+        	this.taComendo = true;
         	
         	// faz o que tem que fazer, ...
         	this.m1 = System.currentTimeMillis();
@@ -43,6 +46,7 @@ public class Filosofo extends Thread {
         	System.out.println("Filosofo "+this.idThread+" esperou por "+espera+" ms, pensou por "+pensou+" ms, comeu por "+this.comeu+" ms.");
         	
         	// e libera a área de concorrência
+        	this.taComendo = false;
         	semaforo.up();
     	}
     }

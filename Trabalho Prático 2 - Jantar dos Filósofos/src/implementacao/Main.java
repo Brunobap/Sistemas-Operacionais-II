@@ -14,6 +14,6 @@ public class Main {
 
 		// Passo 2: ligar as threads e o contador
 		Disparo disp = new Disparo(filos);
-		disp.run();	
+		disp.run();
 	}
 }
