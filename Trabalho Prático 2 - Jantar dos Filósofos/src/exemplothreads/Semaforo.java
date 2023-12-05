@@ -20,9 +20,7 @@ public class Semaforo {
     public synchronized void down() {
         synchronized (this) {
             try {
-                while (num == 0) {
-                    this.wait();
-                }
+                while (num == 0) this.wait();
                 num--;
             } catch (InterruptedException ex) {
                 ex.printStackTrace();

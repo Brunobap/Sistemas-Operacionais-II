@@ -20,6 +20,10 @@ public class Filosofo extends Thread {
         this.m1 = System.currentTimeMillis();
     }
     
+    public void para() {
+    	this.semaforo.down();
+    }
+    
     @Override
     public void run () {    	     	
     	Random rand = new Random();
@@ -50,4 +54,8 @@ public class Filosofo extends Thread {
         	semaforo.up();
     	}
     }
+
+	public boolean isComendo() {
+		return taComendo;
+	}
 }
