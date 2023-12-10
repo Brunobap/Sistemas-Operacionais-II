@@ -1,16 +1,16 @@
 
 package implementacao;
 
-import java.io.IOException;
 
 import exemplothreads.Semaforo;
 
-public class Disparo extends Thread {
+public class Mesa extends Thread {
 	
 	private Filosofo[] filos;
 	private Semaforo sem;
 	
-	public Disparo(Filosofo[] filos, Semaforo sem) {
+	public Mesa(Filosofo[] filos, Semaforo sem) {
+		super("mesa");
 		this.filos = filos;
 		this.sem = sem;
 	}
@@ -25,18 +25,15 @@ public class Disparo extends Thread {
         }
     }
     
-    public synchronized void parada() {    	
+    public synchronized Filosofo[] tirarFoto() {    	
         synchronized (this) {
             try {
-            	while (true) {
-            		this.filos[0].wait();
-            		this.filos[1].wait();
-            		this.filos[2].wait();
-            		this.filos[3].wait();
-            		this.filos[4].wait();
-            	}
+            	Filosofo[] filos = new Filosofo[5];
+            	for (int i=0; i<5; i++)	filos[i] = new Filosofo(this.filos[i]);
+            	return filos;
             } catch (Exception ex) {
                 ex.printStackTrace();
+                return null;
             }
         }
     }

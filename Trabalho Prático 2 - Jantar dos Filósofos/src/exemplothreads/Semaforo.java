@@ -11,7 +11,7 @@ package exemplothreads;
  */
 public class Semaforo {
 
-    private int num;
+    public int num;
 
 	public Semaforo(int numMaxThreads) {
         this.num = numMaxThreads;
