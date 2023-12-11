@@ -1,19 +1,33 @@
 
-package implementacao;
+package semaforo;
 
-public abstract class Mesa extends Thread {
+import implementacao.Filosofo;
+import implementacao.Mesa;
+
+public class Semaforo extends Mesa {
 	
-	public int num;	
-	public Filosofo[] filos;
-	
-	public Mesa(Filosofo[] filos) {
-		this.filos = filos;
+	public Semaforo(Filosofo[] filos) {
+		super(filos);
 		this.num = 0;
 	}
 
-	// Funções "abstratas"
-    public synchronized void down(int id) { }
-    public synchronized void up() { }
+	@Override
+    public synchronized void down(int id) {
+        synchronized (this) {
+            try {
+                while (num == 0) this.wait();
+                num--;
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+    public synchronized void up() {
+        synchronized (this) {
+            this.num++;
+            notifyAll();
+        }
+    }
 
     public synchronized void largada() {    	
         synchronized (this) {

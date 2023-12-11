@@ -1,4 +1,4 @@
-package implementacao;
+package semaforo;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
@@ -23,6 +23,10 @@ import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
+
+import implementacao.Filosofo;
+import implementacao.Mesa;
+
 import javax.swing.JList;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.ListSelectionModel;
@@ -30,14 +34,18 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.SpinnerNumberModel;
 import java.awt.Font;
+import javax.swing.JTextArea;
+import javax.swing.DropMode;
+import javax.swing.AbstractListModel;
+import javax.swing.JScrollPane;
 
-public class GraphicMain extends JFrame {
+public class SemaforoMain extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
 
 	private Filosofo[] filos, foto;
-	private Mesa mesa;
+	private Semaforo mesa;
 	private JTable table;
 	/**
 	 * Launch the application.
@@ -47,7 +55,7 @@ public class GraphicMain extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					GraphicMain frame = new GraphicMain();
+					SemaforoMain frame = new SemaforoMain();
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -59,18 +67,19 @@ public class GraphicMain extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public GraphicMain() {
+	public SemaforoMain() {
+		JTextArea textArea = new JTextArea();
+		
 		// Criar o contexto
 		this.filos = new Filosofo[5];
 		this.foto = new Filosofo[5];
-		this.mesa = new Mesa(filos);
-		for (int i=0; i<5; i++) this.filos[i] = new Filosofo(i,mesa);
-		this.mesa.num = 0;
+		this.mesa = new Semaforo(filos);
+		for (int i=0; i<5; i++) this.filos[i] = new Filosofo(i, mesa, textArea);
 		mesa.largada();
 		
 		
 		// Parte gráfica, não mexer diretamente
-		setTitle("Simulador Jantar dos Filósofos - Bruno Ribeiro Batista");
+		setTitle("Simulador Jantar dos Filósofos - Controle por Semaforo");
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(250, 250, 700, 700);
@@ -183,29 +192,24 @@ public class GraphicMain extends JFrame {
 		JPanel panel_4 = new JPanel();
 		contentPane.add(panel_4, BorderLayout.CENTER);
 		
-		JTextPane textPane = new JTextPane();
 		
 		JLabel lblNewLabel = new JLabel("Dados do último momento da execução:");
 		
 		JLabel lblNewLabel_1 = new JLabel("Operações realizadas:");
+		
+		JScrollPane scrollPane = new JScrollPane();
 		GroupLayout gl_panel_4 = new GroupLayout(panel_4);
 		gl_panel_4.setHorizontalGroup(
 			gl_panel_4.createParallelGroup(Alignment.LEADING)
 				.addGroup(gl_panel_4.createSequentialGroup()
-					.addGroup(gl_panel_4.createParallelGroup(Alignment.TRAILING, false)
-						.addGroup(Alignment.LEADING, gl_panel_4.createSequentialGroup()
-							.addContainerGap()
-							.addComponent(textPane))
-						.addGroup(Alignment.LEADING, gl_panel_4.createSequentialGroup()
-							.addContainerGap()
-							.addComponent(lblNewLabel))
-						.addGroup(Alignment.LEADING, gl_panel_4.createSequentialGroup()
-							.addContainerGap()
-							.addComponent(table, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-						.addGroup(Alignment.LEADING, gl_panel_4.createSequentialGroup()
-							.addContainerGap()
-							.addComponent(lblNewLabel_1)))
-					.addContainerGap(261, Short.MAX_VALUE))
+					.addContainerGap()
+					.addGroup(gl_panel_4.createParallelGroup(Alignment.LEADING)
+						.addGroup(gl_panel_4.createParallelGroup(Alignment.LEADING, false)
+							.addComponent(lblNewLabel)
+							.addComponent(table, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+							.addComponent(lblNewLabel_1))
+						.addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, 423, GroupLayout.PREFERRED_SIZE))
+					.addContainerGap(255, Short.MAX_VALUE))
 		);
 		gl_panel_4.setVerticalGroup(
 			gl_panel_4.createParallelGroup(Alignment.LEADING)
@@ -217,9 +221,11 @@ public class GraphicMain extends JFrame {
 					.addGap(18)
 					.addComponent(lblNewLabel_1)
 					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(textPane, GroupLayout.PREFERRED_SIZE, 505, GroupLayout.PREFERRED_SIZE)
-					.addContainerGap(23, Short.MAX_VALUE))
+					.addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, 375, GroupLayout.PREFERRED_SIZE)
+					.addContainerGap(312, Short.MAX_VALUE))
 		);
+		scrollPane.setViewportView(textArea);
+		textArea.setEditable(false);
 		panel_4.setLayout(gl_panel_4);
 	}
 }
