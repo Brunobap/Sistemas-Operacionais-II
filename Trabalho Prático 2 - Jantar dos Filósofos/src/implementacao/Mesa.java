@@ -1,19 +1,32 @@
 
 package implementacao;
 
-
-import exemplothreads.Semaforo;
-
 public class Mesa extends Thread {
 	
+	public int num;	
 	private Filosofo[] filos;
-	private Semaforo sem;
 	
-	public Mesa(Filosofo[] filos, Semaforo sem) {
-		super("mesa");
+	public Mesa(Filosofo[] filos) {
 		this.filos = filos;
-		this.sem = sem;
+		this.num = 0;
 	}
+
+    public synchronized void down() {
+        synchronized (this) {
+            try {
+                while (num == 0) this.wait();
+                num--;
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+    public synchronized void up() {
+        synchronized (this) {
+            this.num++;
+            notifyAll();
+        }
+    }
 
     public synchronized void largada() {    	
         synchronized (this) {

@@ -4,31 +4,28 @@ package implementacao;
 
 import java.util.Random;
 
-import exemplothreads.Semaforo;
-
 public class Filosofo extends Thread {
 
 	public int idThread, pratos;
 	public boolean taComendo;
-	public Semaforo semaforo;
-	public long m1, m2, pensou, comeu, espera;
+	public Mesa mesa;
+	public long m1, m2, pensou, comeu, espera, esperaMax, esperaMed;
+	
     
-    public Filosofo (int idThread, Semaforo sem){   
+    public Filosofo (int idThread, Mesa mesa){   
         this.idThread = idThread;
-        this.semaforo = sem;  
+        this.mesa = mesa;  
         this.taComendo = false;
         this.m1 = System.currentTimeMillis();
         this.pratos = 0;
+        this.esperaMax = 0;
     }
     public Filosofo (Filosofo molde){   
         this.idThread = molde.idThread;
-        this.semaforo = molde.semaforo;  
         this.taComendo = molde.taComendo;
-        this.m1 = molde.m1;
-        this.m2 = molde.m2;
         this.pratos = molde.pratos;
-        this.comeu = molde.comeu;
-        this.espera = molde.espera;
+        this.esperaMax = molde.esperaMax;
+        this.esperaMed = molde.esperaMed;
     }
     
     @Override
@@ -39,22 +36,24 @@ public class Filosofo extends Thread {
     	// Repetir para sempre
     	while (true) {    		
     		// Passa um tempo pensando
-        	this.comeu = rand.nextLong(100, 500);
+        	this.pensou = rand.nextLong(100, 500);
         	try {
         		sleep(this.pensou);
         	} catch (Exception e) {
 				// TODO: handle exception
 			}
         	// Pede permissão, ...
-        	semaforo.down();  	      
+        	mesa.down();  	      
         	this.taComendo = true;
         	this.pratos++;
         	
         	// faz o que tem que fazer, ...
         	this.m1 = System.currentTimeMillis();
         	this.espera = (m1-m2);
+        	if (espera > esperaMax) esperaMax = espera;
+        	this.esperaMed = ((pratos-1)*this.esperaMed + espera) / pratos;
         	this.m2 = this.m1;
-        	this.pensou = rand.nextLong(100, 500);
+        	this.comeu = rand.nextLong(100, 500);
         	try {
         		sleep(this.comeu);
         	} catch (Exception e) {
@@ -64,7 +63,7 @@ public class Filosofo extends Thread {
         	
         	// e libera a área de concorrência
         	this.taComendo = false;
-        	semaforo.up();
+        	mesa.up();
     	}
     }
 }
