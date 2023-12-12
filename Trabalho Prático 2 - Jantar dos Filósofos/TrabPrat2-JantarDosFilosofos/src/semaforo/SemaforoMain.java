@@ -1,4 +1,4 @@
-package monitor;
+package semaforo;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
@@ -39,16 +39,14 @@ import javax.swing.DropMode;
 import javax.swing.AbstractListModel;
 import javax.swing.JScrollPane;
 
-public class MonitorMain extends JFrame {
+public class SemaforoMain extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
 
 	private Filosofo[] filos, foto;
-	private Monitor mesa;
+	private Semaforo mesa;
 	private JTable table;
-	
-	private int aux;
 	/**
 	 * Launch the application.
 	 * FAVOR NÃO MEXER
@@ -57,7 +55,7 @@ public class MonitorMain extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					MonitorMain frame = new MonitorMain();
+					SemaforoMain frame = new SemaforoMain();
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -69,20 +67,19 @@ public class MonitorMain extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public MonitorMain() {
+	public SemaforoMain() {
 		JTextArea textArea = new JTextArea();
 		
 		// Criar o contexto
 		this.filos = new Filosofo[5];
 		this.foto = new Filosofo[5];
-		this.mesa = new Monitor(filos);
-		this.aux = this.mesa.num;
+		this.mesa = new Semaforo(filos);
 		for (int i=0; i<5; i++) this.filos[i] = new Filosofo(i, mesa, textArea);
 		mesa.largada();
 		
 		
 		// Parte gráfica, não mexer diretamente
-		setTitle("Simulador Jantar dos Filósofos - Controle por Monitor");
+		setTitle("Simulador Jantar dos Filósofos - Controle por Semaforo");
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(250, 250, 700, 700);
@@ -97,7 +94,7 @@ public class MonitorMain extends JFrame {
 		flowLayout.setAlignment(FlowLayout.LEFT);
 		contentPane.add(panel, BorderLayout.NORTH);
 		
-		JLabel lblNewLabel_2 = new JLabel("Contexto: 5 threads \"Filosofo\" em uma thread \"Mesa\", que monitora a execução");
+		JLabel lblNewLabel_2 = new JLabel("Contexto: 5 threads \"Filosofo\" em uma thread \"Mesa\", que implementa um semáforo de Dijikstra.");
 		lblNewLabel_2.setFont(new Font("Tahoma", Font.PLAIN, 12));
 		panel.add(lblNewLabel_2);
 		
@@ -114,7 +111,7 @@ public class MonitorMain extends JFrame {
 		JButton btnNewButton = new JButton("Passo");
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (aux != -1) mesa.num = aux-1;
+				mesa.num = 0;
 				for (Filosofo fi : filos) fi.m1 = System.currentTimeMillis();
 				mesa.up();
 				
@@ -125,22 +122,20 @@ public class MonitorMain extends JFrame {
 				}
 				
 				foto = mesa.tirarFoto();
-				aux = mesa.num;
-				for (int i=0; i<10; i++) mesa.num = Integer.MIN_VALUE;
+				for (int i=0; i<10; i++) mesa.num = -1;
 				for (Filosofo fi : foto) {
 					table.setValueAt(""+fi.esperaMed, fi.idThread+1, 1);
 					table.setValueAt(""+fi.esperaMax, fi.idThread+1, 2);
 					table.setValueAt(""+fi.pratos, fi.idThread+1, 3);
 					table.setValueAt(""+fi.taComendo, fi.idThread+1, 4);
 				}	
-				
 			}
 		});
 		
 		JButton btnNewButton_3 = new JButton("Seguir");
 		btnNewButton_3.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {				
-				if (aux != -1) mesa.num = aux-1;
+				mesa.num = 0;
 				for (Filosofo fi : filos) fi.m1 = System.currentTimeMillis();
 				mesa.up();
 			}
@@ -178,8 +173,7 @@ public class MonitorMain extends JFrame {
 		btnNewButton_2.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				foto = mesa.tirarFoto();
-				aux = mesa.num;
-				mesa.num = Integer.MIN_VALUE;
+				for (int i=0; i<10; i++) mesa.num = -1;
 				for (Filosofo fi : foto) {
 					table.setValueAt(""+fi.esperaMed, fi.idThread+1, 1);
 					table.setValueAt(""+fi.esperaMax, fi.idThread+1, 2);
